@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Book a meeting with {{ settings.host_name }}{% endblock %}
+{% block content %}
+  <h1>Book a meeting with {{ settings.host_name }}</h1>
+  <p class="muted">Meetings are {{ settings.slot_minutes }} minutes. Times shown in {{ settings.timezone }}.</p>
+
+  <form method="get" action="/" class="row">
+    <label>Pick a day
+      <input type="date" name="day" value="{{ day }}" required>
+    </label>
+    <button type="submit">Show times</button>
+  </form>
+
+  {% if day and not slots %}
+    <p class="muted">No open times on {{ day }}. Try another day.</p>
+  {% endif %}
+
+  {% if slots %}
+    <form method="post" action="/book">
+      <fieldset>
+        <legend>Available times on {{ day }}</legend>
+        {% for slot in slots %}
+          <label class="slot">
+            <input type="radio" name="start_at" value="{{ slot.value }}" required>
+            {{ slot.label }}
+          </label>
+        {% endfor %}
+      </fieldset>
+
+      <label>Your name
+        <input type="text" name="client_name" required maxlength="120">
+      </label>
+      <label>Your email
+        <input type="email" name="client_email" required>
+      </label>
+      <label>Anything we should know? (optional)
+        <textarea name="note" rows="3" maxlength="1000"></textarea>
+      </label>
+
+      <button type="submit">Confirm booking</button>
+    </form>
+  {% endif %}
+{% endblock %}

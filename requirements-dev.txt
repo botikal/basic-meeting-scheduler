@@ -1,0 +1,8 @@
+# Development dependencies (includes everything in requirements.txt).
+# Install with:  pip install -r requirements-dev.txt
+
+-r requirements.txt
+
+pytest==9.1.1
+ruff==0.16.6
+httpx==0.28.1

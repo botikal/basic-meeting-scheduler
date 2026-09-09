@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Your booking{% endblock %}
+{% block content %}
+  <h1>Your booking</h1>
+
+  <dl class="details">
+    <dt>With</dt><dd>{{ settings.host_name }}</dd>
+    <dt>When</dt><dd>{{ when }} ({{ settings.timezone }})</dd>
+    <dt>Name</dt><dd>{{ booking.client_name }}</dd>
+    <dt>Email</dt><dd>{{ booking.client_email }}</dd>
+    <dt>Status</dt><dd><strong>{{ booking.status.value }}</strong></dd>
+    {% if booking.note %}<dt>Note</dt><dd>{{ booking.note }}</dd>{% endif %}
+  </dl>
+
+  {% if booking.status.value == "confirmed" %}
+    <section>
+      <h2>Reschedule</h2>
+      <form method="get" action="/b/{{ booking.manage_token }}" class="row">
+        <label>Pick a new day
+          <input type="date" name="day" value="{{ day }}" required>
+        </label>
+        <button type="submit">Show times</button>
+      </form>
+
+      {% if day and not slots %}
+        <p class="muted">No open times on {{ day }}.</p>
+      {% endif %}
+
+      {% if slots %}
+        <form method="post" action="/b/{{ booking.manage_token }}/reschedule">
+          <fieldset>
+            <legend>New time on {{ day }}</legend>
+            {% for slot in slots %}
+              <label class="slot">
+                <input type="radio" name="start_at" value="{{ slot.value }}" required>
+                {{ slot.label }}
+              </label>
+            {% endfor %}
+          </fieldset>
+          <button type="submit">Move booking here</button>
+        </form>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Cancel</h2>
+      <form method="post" action="/b/{{ booking.manage_token }}/cancel"
+            onsubmit="return confirm('Cancel this meeting?');">
+        <button type="submit" class="danger">Cancel booking</button>
+      </form>
+    </section>
+  {% else %}
+    <p><a href="/">Book a new time</a></p>
+  {% endif %}
+{% endblock %}

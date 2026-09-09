@@ -18,6 +18,10 @@ dist/
 # Environment / secrets
 .env
 
+# Local database
+*.db
+*.sqlite3
+
 # OS / editor
 .DS_Store
 Thumbs.db
