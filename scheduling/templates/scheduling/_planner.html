@@ -1,0 +1,88 @@
+{% comment %}
+The booking planner: month calendar -> time slots -> details form / confirm.
+Rendered inside a page on first load; swapped on its own (id="planner") by htmx.
+Every link is a real URL so the flow also works with JavaScript disabled.
+{% endcomment %}
+<div id="planner" class="planner">
+
+  <div class="cal">
+    <div class="cal-head">
+      <a class="cal-nav" href="{{ nav_url }}?month={{ month.prev_month }}"
+         hx-get="{{ nav_url }}?month={{ month.prev_month }}"
+         hx-target="#planner" hx-swap="outerHTML" hx-push-url="true"
+         aria-label="Previous month">&larr;</a>
+      <strong>{{ month.label }}</strong>
+      <a class="cal-nav" href="{{ nav_url }}?month={{ month.next_month }}"
+         hx-get="{{ nav_url }}?month={{ month.next_month }}"
+         hx-target="#planner" hx-swap="outerHTML" hx-push-url="true"
+         aria-label="Next month">&rarr;</a>
+    </div>
+
+    <div class="cal-grid">
+      {% for label in weekday_labels %}<div class="cal-dow">{{ label }}</div>{% endfor %}
+      {% for week in month.weeks %}{% for day in week %}
+        {% if day.is_available %}
+          <a class="cal-day{% if day.date == selected %} is-selected{% endif %}{% if not day.in_month %} is-dim{% endif %}"
+             href="{{ nav_url }}?month={{ month.ym }}&date={{ day.date|date:'Y-m-d' }}"
+             hx-get="{{ nav_url }}?month={{ month.ym }}&date={{ day.date|date:'Y-m-d' }}"
+             hx-target="#planner" hx-swap="outerHTML" hx-push-url="true">{{ day.date.day }}</a>
+        {% else %}
+          <span class="cal-day is-off{% if not day.in_month %} is-dim{% endif %}{% if day.is_today %} is-today{% endif %}">{{ day.date.day }}</span>
+        {% endif %}
+      {% endfor %}{% endfor %}
+    </div>
+  </div>
+
+  {% if slots is not None %}
+    <div class="slots">
+      <h3>{{ selected|date:'l j F' }}</h3>
+      {% if slots %}
+        <div class="slot-grid">
+          {% for slot in slots %}
+            <a class="slot{% if slot.selected %} is-selected{% endif %}"
+               href="{{ nav_url }}?month={{ month.ym }}&date={{ selected|date:'Y-m-d' }}&start={{ slot.iso|urlencode }}"
+               hx-get="{{ nav_url }}?month={{ month.ym }}&date={{ selected|date:'Y-m-d' }}&start={{ slot.iso|urlencode }}"
+               hx-target="#planner" hx-swap="outerHTML" hx-push-url="true">{{ slot.label }}</a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">No open times that day. Try another.</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if start %}
+    <div class="panel">
+      {% if mode == "book" %}
+        <form method="post" action="{{ action_url }}"
+              hx-post="{{ action_url }}" hx-target="#planner" hx-swap="outerHTML">
+          {% csrf_token %}
+          <input type="hidden" name="start" value="{{ start.isoformat }}">
+          <input type="hidden" name="month" value="{{ month.ym }}">
+          <p class="chosen">Selected time: <strong>{{ start_label }}</strong></p>
+          {% if form_error %}<p class="ferror">{{ form_error }}</p>{% endif %}
+          {% for field in form %}
+            <label class="field">
+              <span>{{ field.label }}</span>
+              {{ field }}
+              {% for e in field.errors %}<span class="ferror">{{ e }}</span>{% endfor %}
+            </label>
+          {% endfor %}
+          <button type="submit" class="btn">Confirm booking</button>
+        </form>
+      {% else %}
+        <form method="post" action="{{ action_url }}" hx-post="{{ action_url }}">
+          {% csrf_token %}
+          <input type="hidden" name="start" value="{{ start.isoformat }}">
+          <input type="hidden" name="month" value="{{ month.ym }}">
+          <p class="chosen">Move your meeting to <strong>{{ start_label }}</strong>?</p>
+          <button type="submit" class="btn">Confirm new time</button>
+          <a class="link" href="{{ nav_url }}?month={{ month.ym }}&date={{ selected|date:'Y-m-d' }}"
+             hx-get="{{ nav_url }}?month={{ month.ym }}&date={{ selected|date:'Y-m-d' }}"
+             hx-target="#planner" hx-swap="outerHTML">pick another</a>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</div>

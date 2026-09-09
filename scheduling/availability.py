@@ -76,3 +76,32 @@ def is_slot_available(
 ) -> bool:
     day = local_date_of(start_at, rules)
     return start_at in available_slots(day, rules, ignore_start=ignore_start)
+
+
+def days_with_availability(days: list[date], rules: Rules) -> dict[date, bool]:
+    """For each date, whether it has at least one bookable slot.
+
+    Answers the whole list with a single bookings query - used to shade the
+    month calendar without an N+1.
+    """
+    now = timezone.now()
+    earliest = now + timedelta(hours=rules.min_notice_hours)
+    latest = now + timedelta(days=rules.booking_horizon_days)
+
+    per_day = {d: generate_day_slots(d, rules) for d in days}
+    all_slots = [s for slots in per_day.values() for s in slots]
+    if all_slots:
+        taken = set(
+            Booking.objects.filter(
+                status=Booking.Status.CONFIRMED,
+                start_at__gte=min(all_slots),
+                start_at__lte=max(all_slots),
+            ).values_list("start_at", flat=True)
+        )
+    else:
+        taken = set()
+
+    return {
+        d: any(earliest <= s <= latest and s not in taken for s in slots)
+        for d, slots in per_day.items()
+    }
