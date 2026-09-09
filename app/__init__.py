@@ -1,1 +1,0 @@
-"""Meeting scheduler backend package."""

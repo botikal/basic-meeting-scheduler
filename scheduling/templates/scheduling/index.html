@@ -1,0 +1,50 @@
+{% extends "scheduling/base.html" %}
+{% block title %}Book a meeting with {{ rules.host_name }}{% endblock %}
+{% block content %}
+  <h1>Book a meeting with {{ rules.host_name }}</h1>
+  <p class="muted">
+    Meetings are {{ rules.slot_minutes }} minutes. Times shown in {{ rules.timezone }}.
+  </p>
+
+  <form method="get" action="{% url 'scheduling:index' %}" class="row">
+    <label>Pick a day
+      <input type="date" name="day" value="{{ day|date:'Y-m-d' }}" required>
+    </label>
+    <button type="submit">Show times</button>
+  </form>
+
+  {% if has_day and not slots_exist %}
+    <p class="muted">No open times on {{ day|date:'j M Y' }}. Try another day.</p>
+  {% endif %}
+
+  {% if slots_exist %}
+    <form method="post" action="{% url 'scheduling:book' %}">
+      {% csrf_token %}
+      <input type="hidden" name="day" value="{{ day|date:'Y-m-d' }}">
+
+      {% for error in form.non_field_errors %}
+        <p class="error">{{ error }}</p>
+      {% endfor %}
+
+      <fieldset>
+        <legend>Available times on {{ day|date:'D j M Y' }}</legend>
+        {% for radio in form.start_at %}
+          <label class="slot">{{ radio.tag }} {{ radio.choice_label }}</label>
+        {% endfor %}
+        {{ form.start_at.errors }}
+      </fieldset>
+
+      <label>{{ form.client_name.label }}
+        {{ form.client_name }} {{ form.client_name.errors }}
+      </label>
+      <label>{{ form.client_email.label }}
+        {{ form.client_email }} {{ form.client_email.errors }}
+      </label>
+      <label>{{ form.note.label }}
+        {{ form.note }}
+      </label>
+
+      <button type="submit">Confirm booking</button>
+    </form>
+  {% endif %}
+{% endblock %}

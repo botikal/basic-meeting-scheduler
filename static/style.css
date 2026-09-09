@@ -21,6 +21,10 @@ body {
 h1 { margin-top: .5rem; }
 h2 { margin-top: 2rem; font-size: 1.15rem; }
 .muted { color: GrayText; }
+.error { color: #dc2626; font-weight: 600; }
+
+.messages { list-style: none; padding: 0; }
+.messages li { padding: .6rem .9rem; border-radius: 8px; background: #dcfce7; margin-bottom: .5rem; }
 
 form { margin: 1rem 0; }
 .row { display: flex; gap: .75rem; align-items: end; flex-wrap: wrap; }
@@ -54,7 +58,3 @@ button.danger { background: #dc2626; }
 .details { display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1rem; }
 .details dt { color: GrayText; }
 .details dd { margin: 0; }
-
-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: .9rem; }
-th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid #e4e4e7; }
-tr.cancelled { color: GrayText; text-decoration: line-through; }

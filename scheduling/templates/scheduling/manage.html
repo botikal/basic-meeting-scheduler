@@ -1,0 +1,57 @@
+{% extends "scheduling/base.html" %}
+{% block title %}Your booking{% endblock %}
+{% block content %}
+  <h1>Your booking</h1>
+
+  <dl class="details">
+    <dt>With</dt><dd>{{ rules.host_name }}</dd>
+    <dt>When</dt><dd>{{ when }} ({{ rules.timezone }})</dd>
+    <dt>Name</dt><dd>{{ booking.client_name }}</dd>
+    <dt>Email</dt><dd>{{ booking.client_email }}</dd>
+    <dt>Status</dt><dd><strong>{{ booking.get_status_display }}</strong></dd>
+    {% if booking.note %}<dt>Note</dt><dd>{{ booking.note }}</dd>{% endif %}
+  </dl>
+
+  {% if booking.is_confirmed %}
+    <section>
+      <h2>Reschedule</h2>
+      <form method="get" action="{% url 'scheduling:manage' booking.manage_token %}" class="row">
+        <label>Pick a new day
+          <input type="date" name="day" value="{{ day|date:'Y-m-d' }}" required>
+        </label>
+        <button type="submit">Show times</button>
+      </form>
+
+      {% if has_day and not slots_exist %}
+        <p class="muted">No open times on {{ day|date:'j M Y' }}.</p>
+      {% endif %}
+
+      {% if slots_exist %}
+        <form method="post" action="{% url 'scheduling:reschedule' booking.manage_token %}">
+          {% csrf_token %}
+          <input type="hidden" name="day" value="{{ day|date:'Y-m-d' }}">
+          {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+          <fieldset>
+            <legend>New time on {{ day|date:'D j M Y' }}</legend>
+            {% for radio in form.start_at %}
+              <label class="slot">{{ radio.tag }} {{ radio.choice_label }}</label>
+            {% endfor %}
+            {{ form.start_at.errors }}
+          </fieldset>
+          <button type="submit">Move booking here</button>
+        </form>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Cancel</h2>
+      <form method="post" action="{% url 'scheduling:cancel' booking.manage_token %}"
+            onsubmit="return confirm('Cancel this meeting?');">
+        {% csrf_token %}
+        <button type="submit" class="danger">Cancel booking</button>
+      </form>
+    </section>
+  {% else %}
+    <p><a href="{% url 'scheduling:index' %}">Book a new time</a></p>
+  {% endif %}
+{% endblock %}

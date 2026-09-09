@@ -3,14 +3,14 @@
 A simple web app that lets outside clients book meetings with your team, in the
 style of Calendly. Clients pick an open slot and enter their name + email - no
 account required. Each booking gets a private, unguessable link for rescheduling
-or cancelling.
+or cancelling. Staff manage everything through the Django admin.
 
 ## Stack
 
-- **FastAPI** + **Uvicorn** - web framework and server
-- **SQLModel** on **SQLite** - database (a single `scheduler.db` file)
-- **Jinja2** - server-rendered pages
-- Config via environment / `.env` (see `.env.example`)
+- **Django 6** - web framework, ORM, templates, and the staff admin
+- **Django REST Framework** - the JSON API (`/api/...`)
+- **SQLite** - database (a single `db.sqlite3` file)
+- Config via environment / `.env` (see `.env.example`), read with `django-environ`
 
 ## Setup
 
@@ -21,30 +21,31 @@ python -m venv .venv
 # source .venv/bin/activate     # macOS / Linux
 
 # 2. Install dependencies
-pip install -r requirements.txt          # runtime only
-pip install -r requirements-dev.txt      # + test/lint tools
+pip install -r requirements-dev.txt      # runtime + test/lint tools
+# pip install -r requirements.txt        # runtime only
 
 # 3. Configure
 copy .env.example .env          # then edit .env
+
+# 4. Set up the database and a staff login
+python manage.py migrate
+python manage.py createsuperuser
 ```
 
 ## Run
 
 ```bash
-uvicorn app.main:app --reload
+python manage.py runserver
 ```
-
-Then open:
 
 | URL | What it is |
 |-----|------------|
 | http://localhost:8000/ | Client booking page |
-| http://localhost:8000/b/<token> | Manage a booking (from the confirmation email) |
-| http://localhost:8000/admin | Staff view of all bookings (HTTP Basic auth) |
-| http://localhost:8000/docs | Interactive API documentation |
+| http://localhost:8000/b/&lt;token&gt;/ | Manage a booking (link is in the confirmation email) |
+| http://localhost:8000/admin/ | Staff view of all bookings (login required) |
+| http://localhost:8000/api/ | Browsable JSON API |
 
-With no `SMTP_HOST` set, confirmation emails are printed to the console instead
-of being sent.
+With no `EMAIL_HOST` set, confirmation emails are printed to the console.
 
 ## Tests
 
@@ -54,24 +55,42 @@ ruff check .    # lint
 ruff format .   # auto-format
 ```
 
+## Project layout
+
+```
+config/            Django project (settings, root urls, wsgi/asgi)
+scheduling/        the app
+  models.py        Booking
+  rules.py         typed access to the booking rules in settings.SCHEDULER
+  availability.py  slot generation + availability checks
+  services.py      create / reschedule / cancel (shared by pages and API)
+  emails.py        confirmation + cancellation emails
+  forms.py         booking + reschedule forms
+  views.py         server-rendered pages
+  api.py           DRF JSON endpoints
+  serializers.py   DRF serializers
+  admin.py         staff admin
+  templates/scheduling/
+tests/             pytest suite (test_api.py, test_pages.py)
+```
+
 ## API
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/api/slots?day=YYYY-MM-DD` | Open slots on a day |
-| POST | `/api/bookings` | Create a booking |
-| GET | `/api/bookings/{token}` | Look up a booking |
-| POST | `/api/bookings/{token}/reschedule` | Move a booking |
-| POST | `/api/bookings/{token}/cancel` | Cancel a booking |
-| GET | `/api/admin/bookings` | All bookings (admin auth) |
+| GET | `/api/slots/?day=YYYY-MM-DD` | Open slots on a day |
+| POST | `/api/bookings/` | Create a booking |
+| GET | `/api/bookings/{token}/` | Look up a booking |
+| POST | `/api/bookings/{token}/reschedule/` | Move a booking |
+| POST | `/api/bookings/{token}/cancel/` | Cancel a booking |
 
-## Known limitations (v1)
+## Notes & limitations (v1)
 
-- Double-booking is prevented by an application-level check, not a database
-  constraint - a true simultaneous race could still slip through. Fine for low
-  volume; revisit if traffic grows.
+- Double-booking is prevented both by an app-level check and a database
+  constraint (`unique_confirmed_start` - a partial unique index on confirmed
+  bookings), so even a race loses cleanly with a 409.
 - Availability rules are global (one set of business hours). No per-person
   calendars or holiday handling yet.
 - No Google Calendar / Outlook sync yet.
-- Schema changes require recreating the database (no migrations - add Alembic
-  when the schema stabilizes).
+- The client-facing pages are deliberately plain - the next step is a real
+  calendar-style slot picker.

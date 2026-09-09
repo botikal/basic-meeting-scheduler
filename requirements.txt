@@ -1,11 +1,7 @@
 # Runtime dependencies. Install with:  pip install -r requirements.txt
 # (or, with uv:  uv pip install -r requirements.txt)
 
-fastapi==0.141.1
-uvicorn[standard]==0.52.4
-sqlmodel==0.0.42
-jinja2==3.1.6
-pydantic-settings==2.15.0
-python-multipart==0.0.32
-email-validator==2.3.0
-tzdata==2026.3  # provides the IANA timezone database (needed on Windows)
+Django==6.1.1
+djangorestframework==3.18.1
+django-environ==0.14.0
+tzdata==2026.3  # IANA timezone database (needed on Windows)
