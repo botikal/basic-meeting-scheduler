@@ -229,6 +229,12 @@ a.cal-day:hover { border-color: var(--accent); }
 }
 .btn:hover { filter: brightness(1.05); }
 .btn--danger { background: var(--danger); }
+.btn--sm { padding: .4rem .8rem; font-size: .85rem; }
+.btn--ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
 
 /* ---- Manage page ------------------------------------------ */
 .details {
@@ -255,3 +261,58 @@ a.cal-day:hover { border-color: var(--accent); }
 
 /* htmx: briefly fade the planner while a swap is in flight */
 .planner.htmx-request { opacity: .55; transition: opacity .1s; }
+
+/* ---- Staff area ------------------------------------------- */
+.foot a { color: var(--muted); text-decoration: none; }
+.foot a:hover { color: var(--text); }
+
+.staff-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.staff-tabs { display: flex; gap: .25rem; margin: 0 0 1.25rem; }
+.staff-tabs a {
+  padding: .35rem .8rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 600;
+}
+.staff-tabs a.is-on { background: var(--accent-soft); color: var(--accent); }
+
+.day { margin-bottom: 1.5rem; }
+.day h2 {
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: .35rem;
+  margin-bottom: .6rem;
+}
+
+.bk {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr auto;
+  gap: .25rem 1rem;
+  align-items: start;
+  padding: .7rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.bk:last-child { border-bottom: 0; }
+.bk--cancelled { opacity: .5; }
+.bk-time { font-variant-numeric: tabular-nums; font-weight: 600; display: grid; }
+.bk-time .muted { font-weight: 400; font-size: .8rem; }
+.bk-who { display: grid; gap: .15rem; }
+.bk-mail { font-size: .9rem; }
+.bk-note { margin: .3rem 0 0; font-size: .9rem; color: var(--muted); }
+.bk-actions { display: flex; flex-direction: column; align-items: end; gap: .4rem; }
+
+@media (max-width: 460px) {
+  .bk { grid-template-columns: 1fr; }
+  .bk-actions { flex-direction: row; align-items: center; }
+}

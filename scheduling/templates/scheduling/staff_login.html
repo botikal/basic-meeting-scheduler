@@ -1,0 +1,28 @@
+{% extends "scheduling/base.html" %}
+{% block title %}Staff login{% endblock %}
+{% block content %}
+  <header class="head"><h1>Staff login</h1></header>
+
+  <form method="post" class="panel">
+    {% csrf_token %}
+    {% if form.errors %}
+      <p class="ferror">That username and password don't match. Try again.</p>
+    {% endif %}
+    <label class="field">
+      <span>Username</span>
+      {{ form.username }}
+    </label>
+    <label class="field">
+      <span>Password</span>
+      {{ form.password }}
+    </label>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit" class="btn">Log in</button>
+  </form>
+
+  <p class="muted">
+    Staff accounts are created with
+    <code>python manage.py createsuperuser</code>.
+  </p>
+{% endblock %}
+{% block foot %}<a href="{% url 'scheduling:index' %}">&larr; Back to booking</a>{% endblock %}

@@ -6,11 +6,16 @@ JavaScript. htmx just swaps the ``#planner`` region instead of reloading.
 """
 
 from datetime import date, datetime
+from itertools import groupby
 
 from django.contrib import messages
+from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.views import LoginView
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .availability import available_slots, consecutive_capacity, local_date_of
 from .calendarview import WEEKDAY_LABELS, build_month, parse_month
@@ -270,3 +275,54 @@ def _redirect(request, url: str):
         response["HX-Redirect"] = url
         return response
     return redirect(url)
+
+
+# --- Staff area -------------------------------------------------------
+# Same accounts as the Django admin (any user with is_staff). The client
+# booking flow stays anonymous; this is purely additive.
+
+
+staff_required = user_passes_test(
+    lambda u: u.is_active and u.is_staff,
+    login_url="scheduling:staff-login",
+)
+
+
+class StaffLoginView(LoginView):
+    template_name = "scheduling/staff_login.html"
+    redirect_authenticated_user = True
+
+
+@staff_required
+def staff_home(request):
+    rules = Rules.current()
+    show_all = request.GET.get("all") == "1"
+
+    bookings = Booking.objects.all()
+    if show_all:
+        bookings = bookings.order_by("-start_at")
+    else:
+        bookings = bookings.filter(
+            status=Booking.Status.CONFIRMED, end_at__gte=timezone.now()
+        ).order_by("start_at")
+    rows = list(bookings)
+
+    days = [
+        {"date": day, "bookings": list(items)}
+        for day, items in groupby(rows, key=lambda b: local_date_of(b.start_at, rules))
+    ]
+    return render(
+        request,
+        "scheduling/staff_home.html",
+        {"rules": rules, "days": days, "count": len(rows), "show_all": show_all},
+    )
+
+
+@staff_required
+@require_POST
+def staff_cancel(request, token):
+    booking = get_object_or_404(Booking, manage_token=token)
+    cancel_booking(booking)
+    messages.success(request, f"Cancelled {booking.client_name}'s booking.")
+    nxt = request.POST.get("next", "")
+    return redirect(nxt if nxt.startswith("/staff/") else "scheduling:staff-home")

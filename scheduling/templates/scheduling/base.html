@@ -18,6 +18,8 @@
     {% endif %}
     {% block content %}{% endblock %}
   </main>
-  <footer class="foot">Powered by your own meeting scheduler</footer>
+  <footer class="foot">
+    {% block foot %}<a href="{% url 'scheduling:staff-home' %}">Staff</a>{% endblock %}
+  </footer>
 </body>
 </html>

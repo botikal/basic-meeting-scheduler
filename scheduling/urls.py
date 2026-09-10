@@ -1,5 +1,6 @@
 """URL patterns for the scheduling app."""
 
+from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import api, views
@@ -13,6 +14,15 @@ urlpatterns = [
     path("b/<str:token>/", views.manage, name="manage"),
     path("b/<str:token>/reschedule/", views.reschedule, name="reschedule"),
     path("b/<str:token>/cancel/", views.cancel, name="cancel"),
+    # Staff area
+    path("staff/", views.staff_home, name="staff-home"),
+    path("staff/login/", views.StaffLoginView.as_view(), name="staff-login"),
+    path(
+        "staff/logout/",
+        auth_views.LogoutView.as_view(next_page="scheduling:staff-login"),
+        name="staff-logout",
+    ),
+    path("staff/b/<str:token>/cancel/", views.staff_cancel, name="staff-cancel"),
     # JSON API
     path("api/slots/", api.slots, name="api-slots"),
     path("api/bookings/", api.create_booking_view, name="api-create"),

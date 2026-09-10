@@ -76,6 +76,11 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# Where the staff pages send an unauthenticated visitor, and back again.
+LOGIN_URL = "scheduling:staff-login"
+LOGIN_REDIRECT_URL = "scheduling:staff-home"
+LOGOUT_REDIRECT_URL = "scheduling:staff-login"
+
 # --- i18n / time ------------------------------------------------------
 
 LANGUAGE_CODE = "en-us"

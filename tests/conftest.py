@@ -47,6 +47,11 @@ def next_slot(slot) -> datetime:
 
 
 @pytest.fixture
+def staff_user(django_user_model):
+    return django_user_model.objects.create_user(username="boss", password="pw", is_staff=True)
+
+
+@pytest.fixture
 def other_slot(slot) -> datetime:
     """A second valid slot, one hour after `slot`."""
     return slot + timedelta(hours=1)
