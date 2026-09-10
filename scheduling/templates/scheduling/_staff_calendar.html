@@ -1,0 +1,74 @@
+{% comment %}
+Staff month calendar. A dot under a date = that day has bookings. Click a day
+to see them below. Swapped on its own (id="staff-cal") by htmx; every link is a
+real URL so it also works without JavaScript.
+{% endcomment %}
+{% load tz %}
+<div id="staff-cal" class="planner">
+
+  <div class="cal">
+    <div class="cal-head">
+      <a class="cal-nav" href="?month={{ month.prev_month }}"
+         hx-get="?month={{ month.prev_month }}"
+         hx-target="#staff-cal" hx-swap="outerHTML" hx-push-url="true"
+         aria-label="Previous month">&larr;</a>
+      <strong>{{ month.label }}</strong>
+      <a class="cal-nav" href="?month={{ month.next_month }}"
+         hx-get="?month={{ month.next_month }}"
+         hx-target="#staff-cal" hx-swap="outerHTML" hx-push-url="true"
+         aria-label="Next month">&rarr;</a>
+    </div>
+
+    <div class="cal-grid">
+      {% for label in weekday_labels %}<div class="cal-dow">{{ label }}</div>{% endfor %}
+      {% for week in month.weeks %}{% for day in week %}
+        <a class="cal-day cal-day--staff{% if day.is_selected %} is-selected{% endif %}{% if not day.in_month %} is-dim{% endif %}{% if day.is_today %} is-today{% endif %}"
+           href="?month={{ month.ym }}&date={{ day.date|date:'Y-m-d' }}"
+           hx-get="?month={{ month.ym }}&date={{ day.date|date:'Y-m-d' }}"
+           hx-target="#staff-cal" hx-swap="outerHTML" hx-push-url="true">
+          <span class="cal-num">{{ day.date.day }}</span>
+          {% if day.count %}
+            <span class="cal-dot" title="{{ day.count }} booking{{ day.count|pluralize }}"></span>
+          {% endif %}
+        </a>
+      {% endfor %}{% endfor %}
+    </div>
+  </div>
+
+  {% if selected %}
+    {% timezone rules.timezone %}
+      <section class="day">
+        <h2>{{ selected|date:'l j F Y' }}</h2>
+        {% for b in day_bookings %}
+          <article class="bk{% if b.status == 'cancelled' %} bk--cancelled{% endif %}">
+            <div class="bk-time">
+              {{ b.start_at|time:'H:i' }}&ndash;{{ b.end_at|time:'H:i' }}
+              <span class="muted">{{ b.duration_minutes }} min</span>
+            </div>
+            <div class="bk-who">
+              <strong>{{ b.client_name }}</strong>
+              <a class="bk-mail" href="mailto:{{ b.client_email }}">{{ b.client_email }}</a>
+              {% if b.note %}<p class="bk-note">{{ b.note }}</p>{% endif %}
+            </div>
+            <div class="bk-actions">
+              {% if b.status == 'confirmed' %}
+                <a class="link" href="{% url 'scheduling:manage' b.manage_token %}">Manage</a>
+                <form method="post" action="{% url 'scheduling:staff-cancel' b.manage_token %}"
+                      onsubmit="return confirm('Cancel this booking? {{ b.client_name|escapejs }} will be emailed.');">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn--danger btn--sm">Cancel</button>
+                </form>
+              {% else %}
+                <span class="pill pill--cancelled">Cancelled</span>
+              {% endif %}
+            </div>
+          </article>
+        {% empty %}
+          <p class="muted">Nothing booked this day.</p>
+        {% endfor %}
+      </section>
+    {% endtimezone %}
+  {% endif %}
+
+</div>

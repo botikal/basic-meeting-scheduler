@@ -128,6 +128,7 @@ p { margin: .5rem 0; }
 }
 
 .cal-day {
+  position: relative;
   aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
@@ -147,6 +148,30 @@ a.cal-day:hover { border-color: var(--accent); }
 .cal-day.is-off { color: var(--muted); }
 .cal-day.is-dim { opacity: .35; }
 .cal-day.is-today { outline: 2px solid var(--border); outline-offset: -2px; }
+
+/* Staff calendar: plain cells, a dot marks days that have bookings */
+a.cal-day--staff {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 400;
+  border-color: var(--border);
+}
+a.cal-day--staff.is-selected {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+}
+.cal-dot {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.cal-day--staff.is-selected .cal-dot { display: none; }
 
 /* ---- Slots ---------------------------------------------------- */
 .slot-grid {
@@ -273,18 +298,7 @@ a.cal-day:hover { border-color: var(--accent); }
   gap: 1rem;
 }
 
-.staff-tabs { display: flex; gap: .25rem; margin: 0 0 1.25rem; }
-.staff-tabs a {
-  padding: .35rem .8rem;
-  border-radius: 999px;
-  text-decoration: none;
-  color: var(--muted);
-  font-size: .9rem;
-  font-weight: 600;
-}
-.staff-tabs a.is-on { background: var(--accent-soft); color: var(--accent); }
-
-.day { margin-bottom: 1.5rem; }
+.day { margin-top: 1.5rem; margin-bottom: .5rem; }
 .day h2 {
   font-size: .8rem;
   text-transform: uppercase;

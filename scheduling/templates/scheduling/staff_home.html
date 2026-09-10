@@ -1,15 +1,10 @@
 {% extends "scheduling/base.html" %}
-{% load tz %}
-{% block title %}{% if show_all %}All bookings{% else %}Upcoming bookings{% endif %}{% endblock %}
+{% block title %}Bookings{% endblock %}
 {% block content %}
-{% timezone rules.timezone %}
   <header class="head staff-head">
     <div>
-      <h1>{% if show_all %}All bookings{% else %}Upcoming bookings{% endif %}</h1>
-      <p class="muted">
-        {{ count }} booking{{ count|pluralize }}
-        &middot; signed in as {{ request.user.get_username }}
-      </p>
+      <h1>Bookings</h1>
+      <p class="muted">signed in as {{ request.user.get_username }}</p>
     </div>
     <form method="post" action="{% url 'scheduling:staff-logout' %}">
       {% csrf_token %}
@@ -17,44 +12,6 @@
     </form>
   </header>
 
-  <p class="staff-tabs">
-    <a href="{% url 'scheduling:staff-home' %}" class="{% if not show_all %}is-on{% endif %}">Upcoming</a>
-    <a href="?all=1" class="{% if show_all %}is-on{% endif %}">All bookings</a>
-  </p>
-
-  {% for day in days %}
-    <section class="day">
-      <h2>{{ day.date|date:'l j F Y' }}</h2>
-      {% for b in day.bookings %}
-        <article class="bk{% if b.status == 'cancelled' %} bk--cancelled{% endif %}">
-          <div class="bk-time">
-            {{ b.start_at|time:'H:i' }}&ndash;{{ b.end_at|time:'H:i' }}
-            <span class="muted">{{ b.duration_minutes }} min</span>
-          </div>
-          <div class="bk-who">
-            <strong>{{ b.client_name }}</strong>
-            <a class="bk-mail" href="mailto:{{ b.client_email }}">{{ b.client_email }}</a>
-            {% if b.note %}<p class="bk-note">{{ b.note }}</p>{% endif %}
-          </div>
-          <div class="bk-actions">
-            {% if b.status == 'confirmed' %}
-              <a class="link" href="{% url 'scheduling:manage' b.manage_token %}">Manage</a>
-              <form method="post" action="{% url 'scheduling:staff-cancel' b.manage_token %}"
-                    onsubmit="return confirm('Cancel this booking? {{ b.client_name|escapejs }} will be emailed.');">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                <button type="submit" class="btn btn--danger btn--sm">Cancel</button>
-              </form>
-            {% else %}
-              <span class="pill pill--cancelled">Cancelled</span>
-            {% endif %}
-          </div>
-        </article>
-      {% endfor %}
-    </section>
-  {% empty %}
-    <p class="muted">No bookings{% if not show_all %} coming up{% endif %}.</p>
-  {% endfor %}
-{% endtimezone %}
+  {% include "scheduling/_staff_calendar.html" %}
 {% endblock %}
 {% block foot %}<a href="{% url 'scheduling:index' %}">Booking page</a>{% endblock %}

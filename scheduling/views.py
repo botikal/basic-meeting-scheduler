@@ -5,8 +5,7 @@ Every interactive step is a plain GET with query params - ``?month=`` /
 JavaScript. htmx just swaps the ``#planner`` region instead of reloading.
 """
 
-from datetime import date, datetime
-from itertools import groupby
+from datetime import date, datetime, time, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
@@ -18,7 +17,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .availability import available_slots, consecutive_capacity, local_date_of
-from .calendarview import WEEKDAY_LABELS, build_month, parse_month
+from .calendarview import (
+    WEEKDAY_LABELS,
+    build_month,
+    build_staff_month,
+    parse_month,
+)
 from .forms import BookingDetailsForm
 from .models import Booking
 from .rules import Rules
@@ -296,26 +300,32 @@ class StaffLoginView(LoginView):
 @staff_required
 def staff_home(request):
     rules = Rules.current()
-    show_all = request.GET.get("all") == "1"
+    year, month = parse_month(request.GET.get("month"))
+    selected = _parse_date(request.GET.get("date"))
+    if selected is None and not request.GET.get("month"):
+        selected = timezone.localdate()
+        year, month = selected.year, selected.month
 
-    bookings = Booking.objects.all()
-    if show_all:
-        bookings = bookings.order_by("-start_at")
-    else:
-        bookings = bookings.filter(
-            status=Booking.Status.CONFIRMED, end_at__gte=timezone.now()
-        ).order_by("start_at")
-    rows = list(bookings)
+    day_bookings: list[Booking] = []
+    if selected:
+        day_start = datetime.combine(selected, time.min, tzinfo=rules.tz)
+        day_bookings = list(
+            Booking.objects.filter(
+                start_at__gte=day_start, start_at__lt=day_start + timedelta(days=1)
+            ).order_by("start_at")
+        )
 
-    days = [
-        {"date": day, "bookings": list(items)}
-        for day, items in groupby(rows, key=lambda b: local_date_of(b.start_at, rules))
-    ]
-    return render(
-        request,
-        "scheduling/staff_home.html",
-        {"rules": rules, "days": days, "count": len(rows), "show_all": show_all},
+    context = {
+        "rules": rules,
+        "month": build_staff_month(year, month, rules, selected),
+        "weekday_labels": WEEKDAY_LABELS,
+        "selected": selected,
+        "day_bookings": day_bookings,
+    }
+    template = (
+        "scheduling/_staff_calendar.html" if _is_htmx(request) else "scheduling/staff_home.html"
     )
+    return render(request, template, context)
 
 
 @staff_required
