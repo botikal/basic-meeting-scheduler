@@ -11,8 +11,14 @@ from .rules import Rules
 
 
 def _when(booking: Booking, rules: Rules) -> str:
-    local = booking.start_at.astimezone(rules.tz)
-    return local.strftime("%A, %d %B %Y at %H:%M ") + rules.timezone
+    start = booking.start_at.astimezone(rules.tz)
+    end = booking.end_at.astimezone(rules.tz)
+    return (
+        start.strftime("%A, %d %B %Y, %H:%M")
+        + end.strftime("-%H:%M ")
+        + rules.timezone
+        + f" ({booking.duration_minutes} minutes)"
+    )
 
 
 def _manage_url(booking: Booking, rules: Rules) -> str:

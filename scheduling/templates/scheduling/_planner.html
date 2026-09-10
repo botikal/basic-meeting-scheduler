@@ -61,6 +61,22 @@ Every link is a real URL so the flow also works with JavaScript disabled.
           <input type="hidden" name="month" value="{{ month.ym }}">
           <p class="chosen">Selected time: <strong>{{ start_label }}</strong></p>
           {% if form_error %}<p class="ferror">{{ form_error }}</p>{% endif %}
+
+          {% if length_options|length > 1 %}
+            <fieldset class="lengths">
+              <legend>Meeting length</legend>
+              {% for opt in length_options %}
+                <label class="len{% if opt.selected %} is-selected{% endif %}">
+                  <input type="radio" name="slot_count" value="{{ opt.value }}"
+                         {% if opt.selected %}checked{% endif %}>
+                  {{ opt.label }}
+                </label>
+              {% endfor %}
+            </fieldset>
+          {% else %}
+            <input type="hidden" name="slot_count" value="1">
+          {% endif %}
+
           {% for field in form %}
             <label class="field">
               <span>{{ field.label }}</span>
@@ -75,8 +91,17 @@ Every link is a real URL so the flow also works with JavaScript disabled.
           {% csrf_token %}
           <input type="hidden" name="start" value="{{ start.isoformat }}">
           <input type="hidden" name="month" value="{{ month.ym }}">
-          <p class="chosen">Move your meeting to <strong>{{ start_label }}</strong>?</p>
-          <button type="submit" class="btn">Confirm new time</button>
+          {% if can_move %}
+            <p class="chosen">
+              Move your <strong>{{ reschedule_length }}</strong> meeting to
+              <strong>{{ start_label }}</strong>?
+            </p>
+            <button type="submit" class="btn">Confirm new time</button>
+          {% else %}
+            <p class="ferror">
+              There isn't a free {{ reschedule_length }} block starting then.
+            </p>
+          {% endif %}
           <a class="link" href="{{ nav_url }}?month={{ month.ym }}&date={{ selected|date:'Y-m-d' }}"
              hx-get="{{ nav_url }}?month={{ month.ym }}&date={{ selected|date:'Y-m-d' }}"
              hx-target="#planner" hx-swap="outerHTML">pick another</a>

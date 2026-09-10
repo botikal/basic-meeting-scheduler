@@ -176,6 +176,28 @@ a.cal-day:hover { border-color: var(--accent); }
 }
 .chosen { margin-top: 0; }
 
+.lengths {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+.lengths legend { font-size: .85rem; color: var(--muted); margin-bottom: .4rem; }
+.len {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .45rem .8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.len.is-selected { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.len input { accent-color: var(--accent); }
+
 .field { display: grid; gap: .3rem; margin: .85rem 0; }
 .field > span { font-size: .85rem; color: var(--muted); }
 .field input,

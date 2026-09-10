@@ -1,8 +1,8 @@
 """Server-rendered booking flow (progressively enhanced with htmx).
 
 Every interactive step is a plain GET with query params - ``?month=`` /
-``?date=`` / ``?start=`` - so the pages work without JavaScript. htmx just swaps
-the ``#planner`` region instead of reloading the whole page.
+``?date=`` / ``?start=`` / ``?slot_count=`` - so the pages work without
+JavaScript. htmx just swaps the ``#planner`` region instead of reloading.
 """
 
 from datetime import date, datetime
@@ -12,7 +12,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from .availability import available_slots, local_date_of
+from .availability import available_slots, consecutive_capacity, local_date_of
 from .calendarview import WEEKDAY_LABELS, build_month, parse_month
 from .forms import BookingDetailsForm
 from .models import Booking
@@ -47,8 +47,23 @@ def _parse_start(raw: str | None) -> datetime | None:
         return None
 
 
+def _clamped_int(raw, low: int, high: int) -> int:
+    try:
+        return max(low, min(int(raw), high))
+    except TypeError, ValueError:
+        return low
+
+
 def _slot_label(moment: datetime, rules: Rules) -> str:
     return moment.astimezone(rules.tz).strftime("%A %d %B, %H:%M")
+
+
+def _length_label(minutes: int) -> str:
+    if minutes < 60:
+        return f"{minutes} minutes"
+    hours, rest = divmod(minutes, 60)
+    unit = "hour" if hours == 1 else "hours"
+    return f"{hours} {unit}" if rest == 0 else f"{hours}h {rest}m"
 
 
 def _planner_context(
@@ -72,17 +87,43 @@ def _planner_context(
     else:
         year, month = parse_month(None)
 
-    ignore_start = booking.start_at if booking else None
+    exclude_id = booking.pk if booking else None
+    need = booking.slot_count if (mode == "reschedule" and booking) else 1
+
     slots = None
     if selected:
+        free = available_slots(selected, rules, exclude_id=exclude_id)
+        if need > 1:
+            free_set = set(free)
+            step = rules.slot_length
+            free = [s for s in free if all((s + i * step) in free_set for i in range(need))]
         slots = [
             {
                 "iso": s.isoformat(),
                 "label": s.astimezone(rules.tz).strftime("%H:%M"),
                 "selected": start is not None and s == start,
             }
-            for s in available_slots(selected, rules, ignore_start=ignore_start)
+            for s in free
         ]
+
+    length_options = None
+    slot_count = 1
+    can_move = True
+    if start:
+        capacity = consecutive_capacity(start, rules, exclude_id=exclude_id)
+        if mode == "book":
+            top = max(min(capacity, rules.max_consecutive_slots), 1)
+            slot_count = _clamped_int(_param(request, "slot_count"), 1, top)
+            length_options = [
+                {
+                    "value": n,
+                    "label": _length_label(n * rules.slot_minutes),
+                    "selected": n == slot_count,
+                }
+                for n in range(1, top + 1)
+            ]
+        else:
+            can_move = capacity >= need
 
     return {
         "rules": rules,
@@ -95,6 +136,10 @@ def _planner_context(
         "slots": slots,
         "start": start,
         "start_label": _slot_label(start, rules) if start else None,
+        "length_options": length_options,
+        "slot_count": slot_count,
+        "can_move": can_move,
+        "reschedule_length": (_length_label(booking.duration_minutes) if booking else None),
         "booking": booking,
         "form": form if form is not None else BookingDetailsForm(),
         "form_error": form_error,
@@ -146,6 +191,9 @@ def book(request):
                 client_email=form.cleaned_data["client_email"],
                 start_at=start,
                 note=form.cleaned_data["note"],
+                slot_count=_clamped_int(
+                    request.POST.get("slot_count"), 1, rules.max_consecutive_slots
+                ),
                 rules=rules,
             )
             return _redirect(request, booking.get_absolute_url())

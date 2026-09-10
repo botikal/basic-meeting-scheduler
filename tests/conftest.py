@@ -15,6 +15,7 @@ TEST_SCHEDULER = {
     "BUSINESS_START_HOUR": 9,
     "BUSINESS_END_HOUR": 17,
     "SLOT_MINUTES": 30,
+    "MAX_CONSECUTIVE_SLOTS": 2,
     "AVAILABLE_WEEKDAYS": [0, 1, 2, 3, 4],
     "BOOKING_HORIZON_DAYS": 60,
     "MIN_NOTICE_HOURS": 0,
@@ -37,6 +38,12 @@ def _weekday_at_nine(day_offset: int) -> datetime:
 def slot() -> datetime:
     """A valid, bookable slot: an upcoming weekday at opening time."""
     return _weekday_at_nine(3)
+
+
+@pytest.fixture
+def next_slot(slot) -> datetime:
+    """The slot immediately after `slot` (30 minutes later)."""
+    return slot + timedelta(minutes=30)
 
 
 @pytest.fixture

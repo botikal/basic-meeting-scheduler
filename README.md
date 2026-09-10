@@ -62,11 +62,12 @@ config/            Django project (settings, root urls, wsgi/asgi)
 scheduling/        the app
   models.py        Booking
   rules.py         typed access to the booking rules in settings.SCHEDULER
-  availability.py  slot generation + availability checks
+  availability.py  slot generation + availability / capacity checks
+  calendarview.py  month-grid builder for the calendar picker
   services.py      create / reschedule / cancel (shared by pages and API)
   emails.py        confirmation + cancellation emails
-  forms.py         booking + reschedule forms
-  views.py         server-rendered pages
+  forms.py         the client-details form
+  views.py         server-rendered pages (htmx-enhanced)
   api.py           DRF JSON endpoints
   serializers.py   DRF serializers
   admin.py         staff admin
@@ -78,19 +79,28 @@ tests/             pytest suite (test_api.py, test_pages.py)
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| GET | `/api/slots/?day=YYYY-MM-DD` | Open slots on a day |
-| POST | `/api/bookings/` | Create a booking |
+| GET | `/api/slots/?day=YYYY-MM-DD[&slot_count=N]` | Open slots on a day (that can fit N back-to-back slots) |
+| POST | `/api/bookings/` | Create a booking (`slot_count` 1-`MAX_CONSECUTIVE_SLOTS`) |
 | GET | `/api/bookings/{token}/` | Look up a booking |
 | POST | `/api/bookings/{token}/reschedule/` | Move a booking |
 | POST | `/api/bookings/{token}/cancel/` | Cancel a booking |
 
+## Meeting length
+
+A booking can span 1-`MAX_CONSECUTIVE_SLOTS` back-to-back slots (default 2, i.e.
+30 or 60 minutes). The client picks a start time, then a length - "1 hour" only
+appears when the following slot is also free. `Booking.slot_count` records how
+many slots a booking holds; `end_at` is derived from it.
+
 ## Notes & limitations (v1)
 
-- Double-booking is prevented both by an app-level check and a database
-  constraint (`unique_confirmed_start` - a partial unique index on confirmed
-  bookings), so even a race loses cleanly with a 409.
+- Double-booking: the availability check and the insert run inside one
+  `transaction.atomic()` block, and a partial unique index
+  (`unique_confirmed_start`) hard-guarantees no two confirmed bookings share a
+  start time. On SQLite the transaction's global write lock also serialises the
+  multi-slot overlap check; on Postgres you'd add `select_for_update()`.
 - Availability rules are global (one set of business hours). No per-person
   calendars or holiday handling yet.
+- No cancel/reschedule cutoff - a client can change a booking that starts in a
+  minute.
 - No Google Calendar / Outlook sync yet.
-- The client-facing pages are deliberately plain - the next step is a real
-  calendar-style slot picker.

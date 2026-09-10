@@ -124,6 +124,9 @@ SCHEDULER = {
     "BUSINESS_START_HOUR": env.int("BUSINESS_START_HOUR", default=9),
     "BUSINESS_END_HOUR": env.int("BUSINESS_END_HOUR", default=17),
     "SLOT_MINUTES": env.int("SLOT_MINUTES", default=30),
+    # Longest booking a client may make, counted in back-to-back slots.
+    # 2 with 30-minute slots => they can book 30 or 60 minutes.
+    "MAX_CONSECUTIVE_SLOTS": env.int("MAX_CONSECUTIVE_SLOTS", default=2),
     "AVAILABLE_WEEKDAYS": [
         int(d) for d in env.list("AVAILABLE_WEEKDAYS", default=["0", "1", "2", "3", "4"])
     ],

@@ -34,12 +34,18 @@ def slots(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
     rules = Rules.current()
-    return Response(
-        {
-            "day": day.isoformat(),
-            "slots": [s.isoformat() for s in available_slots(day, rules)],
-        }
-    )
+    try:
+        need = max(1, int(request.query_params.get("slot_count", 1)))
+    except ValueError:
+        need = 1
+
+    free = available_slots(day, rules)
+    if need > 1:
+        free_set = set(free)
+        step = rules.slot_length
+        free = [s for s in free if all((s + i * step) in free_set for i in range(need))]
+
+    return Response({"day": day.isoformat(), "slots": [s.isoformat() for s in free]})
 
 
 @api_view(["POST"])
@@ -65,7 +71,11 @@ def reschedule_view(request, token):
     serializer = RescheduleSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     try:
-        reschedule_booking(booking, serializer.validated_data["start_at"])
+        reschedule_booking(
+            booking,
+            serializer.validated_data["start_at"],
+            slot_count=serializer.validated_data.get("slot_count"),
+        )
     except SlotUnavailable as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_409_CONFLICT)
     return Response(BookingSerializer(booking).data)

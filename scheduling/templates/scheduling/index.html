@@ -4,7 +4,12 @@
   <header class="head">
     <h1>Book a meeting with {{ rules.host_name }}</h1>
     <p class="muted">
-      {{ rules.slot_minutes }}-minute meetings &middot; times shown in {{ rules.timezone }}
+      {% if rules.offers_longer_meetings %}
+        {{ rules.slot_minutes }}&ndash;{{ rules.max_minutes }} minute meetings
+      {% else %}
+        {{ rules.slot_minutes }}-minute meetings
+      {% endif %}
+      &middot; times shown in {{ rules.timezone }}
     </p>
   </header>
 

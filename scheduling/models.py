@@ -21,6 +21,8 @@ class Booking(models.Model):
     client_email = models.EmailField()
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
+    # Number of back-to-back slots this booking occupies (1 = a single slot).
+    slot_count = models.PositiveSmallIntegerField(default=1)
     note = models.TextField(blank=True, default="")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.CONFIRMED)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -43,6 +45,10 @@ class Booking(models.Model):
     @property
     def is_confirmed(self) -> bool:
         return self.status == self.Status.CONFIRMED
+
+    @property
+    def duration_minutes(self) -> int:
+        return round((self.end_at - self.start_at).total_seconds() / 60)
 
     def get_absolute_url(self) -> str:
         return reverse("scheduling:manage", args=[self.manage_token])

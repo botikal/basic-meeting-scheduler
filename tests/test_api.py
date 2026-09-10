@@ -1,5 +1,7 @@
 """Tests for the JSON API."""
 
+from datetime import timedelta
+
 import pytest
 from rest_framework.test import APIClient
 
@@ -84,6 +86,31 @@ def test_cancel_frees_slot_and_blocks_changes(api, slot, other_slot):
         format="json",
     )
     assert again.status_code == 409
+
+
+def test_booking_an_hour_spans_two_slots(api, slot):
+    resp = _book(api, slot, slot_count=2)
+    assert resp.status_code == 201
+    assert resp.data["slot_count"] == 2
+
+    token = resp.data["manage_token"]
+    detail = api.get(f"/api/bookings/{token}/").data
+    assert detail["end_at"][11:16] == (slot + timedelta(hours=1)).isoformat()[11:16]
+
+
+def test_slots_slot_count_filter_excludes_starts_without_room(api, slot, next_slot):
+    _book(api, next_slot)  # 30-minute booking in the second half of the hour
+
+    day = slot.date().isoformat()
+    one = api.get("/api/slots/", {"day": day, "slot_count": 1}).data["slots"]
+    two = api.get("/api/slots/", {"day": day, "slot_count": 2}).data["slots"]
+    assert slot.isoformat() in one
+    assert slot.isoformat() not in two
+
+
+def test_cannot_book_two_slots_when_the_second_is_taken(api, slot, next_slot):
+    assert _book(api, next_slot).status_code == 201
+    assert _book(api, slot, slot_count=2, client_email="c@d.com").status_code == 409
 
 
 def test_unknown_token_is_404(api):
