@@ -11,11 +11,12 @@ UTC = ZoneInfo("UTC")
 TEST_SCHEDULER = {
     "HOST_NAME": "Acme Corp",
     "BASE_URL": "http://testserver",
-    "TIMEZONE": "UTC",
+    "BUSINESS_TIMEZONE": "UTC",
+    "DISPLAY_TIMEZONE": "UTC",
     "BUSINESS_START_HOUR": 9,
     "BUSINESS_END_HOUR": 17,
     "SLOT_MINUTES": 30,
-    "MAX_CONSECUTIVE_SLOTS": 2,
+    "MAX_CONSECUTIVE_SLOTS": 1,
     "AVAILABLE_WEEKDAYS": [0, 1, 2, 3, 4],
     "BOOKING_HORIZON_DAYS": 60,
     "MIN_NOTICE_HOURS": 0,
@@ -25,6 +26,12 @@ TEST_SCHEDULER = {
 @pytest.fixture(autouse=True)
 def _scheduler_settings(settings):
     settings.SCHEDULER = dict(TEST_SCHEDULER)
+
+
+@pytest.fixture
+def long_meetings(_scheduler_settings, settings):
+    """Raise the cap so a booking can span two slots (60 minutes)."""
+    settings.SCHEDULER["MAX_CONSECUTIVE_SLOTS"] = 2
 
 
 def _weekday_at_nine(day_offset: int) -> datetime:

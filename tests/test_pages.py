@@ -100,16 +100,28 @@ def test_cancel_flow(client, slot):
     assert booking.status == Booking.Status.CANCELLED
 
 
-def test_can_book_a_one_hour_meeting(client, slot):
-    resp = client.post("/book/", _details(start=slot.isoformat(), slot_count="2"))
-    assert resp.status_code == 302
+def test_only_30_minute_meetings_by_default(client, slot):
+    """MAX_CONSECUTIVE_SLOTS defaults to 1 - no length choice, no hour booking."""
+    resp = client.get("/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
+    body = resp.content.decode()
+    assert "Meeting length" not in body
+    assert 'name="slot_count" value="1"' in body
 
+    client.post("/book/", _details(start=slot.isoformat(), slot_count="2"))
+    assert Booking.objects.get().slot_count == 1
+
+
+def test_longer_meetings_when_the_cap_is_raised(client, slot, long_meetings):
+    resp = client.get("/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
+    assert "1 hour" in resp.content.decode()
+
+    client.post("/book/", _details(start=slot.isoformat(), slot_count="2"))
     booking = Booking.objects.get()
     assert booking.slot_count == 2
     assert booking.duration_minutes == 60
 
 
-def test_one_hour_booking_blocks_both_slots(client, slot, next_slot):
+def test_hour_booking_blocks_both_slots(client, slot, next_slot, long_meetings):
     client.post("/book/", _details(start=slot.isoformat(), slot_count="2"))
 
     open_slots = client.get("/api/slots/", {"day": slot.date().isoformat()}).json()["slots"]
@@ -117,26 +129,12 @@ def test_one_hour_booking_blocks_both_slots(client, slot, next_slot):
     assert next_slot.isoformat() not in open_slots
 
 
-def test_length_options_offered_when_there_is_room(client, slot):
-    resp = client.get("/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
-    assert "1 hour" in resp.content.decode()
-
-
-def test_only_30_minutes_when_next_slot_is_taken(client, slot, next_slot):
-    client.post("/book/", _details(start=next_slot.isoformat(), client_email="a@b.com"))
-
-    resp = client.get("/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
-    body = resp.content.decode()
-    assert "1 hour" not in body
-    assert 'name="slot_count" value="1"' in body
-
-
-def test_slot_count_above_max_is_clamped(client, slot):
+def test_slot_count_above_max_is_clamped(client, slot, long_meetings):
     client.post("/book/", _details(start=slot.isoformat(), slot_count="5"))
     assert Booking.objects.get().slot_count == 2
 
 
-def test_reschedule_keeps_the_duration(client, slot, other_slot):
+def test_reschedule_keeps_the_duration(client, slot, other_slot, long_meetings):
     client.post("/book/", _details(start=slot.isoformat(), slot_count="2"))
     booking = Booking.objects.get()
 

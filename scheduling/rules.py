@@ -11,7 +11,11 @@ from django.conf import settings
 class Rules:
     host_name: str
     base_url: str
-    timezone: str
+    # The business's own timezone: business hours are expressed in it, and the
+    # staff pages display times in it.
+    business_timezone: str
+    # What clients see times in (e.g. "UTC").
+    display_timezone: str
     business_start_hour: int
     business_end_hour: int
     slot_minutes: int
@@ -26,7 +30,8 @@ class Rules:
         return cls(
             host_name=cfg["HOST_NAME"],
             base_url=cfg["BASE_URL"].rstrip("/"),
-            timezone=cfg["TIMEZONE"],
+            business_timezone=cfg["BUSINESS_TIMEZONE"],
+            display_timezone=cfg["DISPLAY_TIMEZONE"],
             business_start_hour=cfg["BUSINESS_START_HOUR"],
             business_end_hour=cfg["BUSINESS_END_HOUR"],
             slot_minutes=cfg["SLOT_MINUTES"],
@@ -37,8 +42,12 @@ class Rules:
         )
 
     @property
-    def tz(self) -> ZoneInfo:
-        return ZoneInfo(self.timezone)
+    def business_tz(self) -> ZoneInfo:
+        return ZoneInfo(self.business_timezone)
+
+    @property
+    def display_tz(self) -> ZoneInfo:
+        return ZoneInfo(self.display_timezone)
 
     @property
     def slot_length(self) -> timedelta:

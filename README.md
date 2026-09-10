@@ -12,6 +12,13 @@ or cancelling. Staff manage everything through the Django admin.
 - **SQLite** - database (a single `db.sqlite3` file)
 - Config via environment / `.env` (see `.env.example`), read with `django-environ`
 
+## Timezones
+
+Business hours are set in `BUSINESS_TIMEZONE` (default `Asia/Seoul`, 09:00-18:00),
+and clients see every time in `DISPLAY_TIMEZONE` (default `UTC`). So a Korean
+09:00-18:00 workday shows to a client as 00:00-09:00 UTC. The staff calendar shows
+times in `BUSINESS_TIMEZONE`.
+
 ## Setup
 
 ```bash
@@ -72,7 +79,7 @@ scheduling/        the app
   serializers.py   DRF serializers
   admin.py         staff admin
   templates/scheduling/
-tests/             pytest suite (test_api.py, test_pages.py)
+tests/             pytest suite (api, pages, staff, timezones)
 ```
 
 ## API
@@ -87,9 +94,10 @@ tests/             pytest suite (test_api.py, test_pages.py)
 
 ## Meeting length
 
-A booking can span 1-`MAX_CONSECUTIVE_SLOTS` back-to-back slots (default 2, i.e.
-30 or 60 minutes). The client picks a start time, then a length - "1 hour" only
-appears when the following slot is also free. `Booking.slot_count` records how
+Every meeting is `SLOT_MINUTES` long (default 30). Raising `MAX_CONSECUTIVE_SLOTS`
+above 1 lets a client book several back-to-back slots as one meeting - a
+"Meeting length" choice then appears on the booking form, offering a longer
+option only when the following slots are free. `Booking.slot_count` records how
 many slots a booking holds; `end_at` is derived from it.
 
 ## Notes & limitations (v1)
@@ -103,4 +111,5 @@ many slots a booking holds; `end_at` is derived from it.
   calendars or holiday handling yet.
 - No cancel/reschedule cutoff - a client can change a booking that starts in a
   minute.
-- No Google Calendar / Outlook sync yet.
+- No Google Calendar / Outlook sync or Google Meet links yet - that needs the
+  Google Calendar API (a Google Cloud project + OAuth credentials).

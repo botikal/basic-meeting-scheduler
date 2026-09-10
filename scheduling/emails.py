@@ -11,12 +11,12 @@ from .rules import Rules
 
 
 def _when(booking: Booking, rules: Rules) -> str:
-    start = booking.start_at.astimezone(rules.tz)
-    end = booking.end_at.astimezone(rules.tz)
+    start = booking.start_at.astimezone(rules.display_tz)
+    end = booking.end_at.astimezone(rules.display_tz)
     return (
         start.strftime("%A, %d %B %Y, %H:%M")
         + end.strftime("-%H:%M ")
-        + rules.timezone
+        + rules.display_timezone
         + f" ({booking.duration_minutes} minutes)"
     )
 

@@ -1,7 +1,9 @@
 """Slot generation and availability checks.
 
 All datetimes here are timezone-aware UTC (Django's convention with USE_TZ=True).
-Business hours from `Rules` are interpreted in `rules.timezone`.
+Business hours are expressed in ``rules.business_timezone``; a "day" that a client
+picks is a date in ``rules.display_timezone``, so slot generation walks the
+business grid and keeps the slots whose *display* date matches.
 
 A booking can occupy several back-to-back slots (up to
 ``rules.max_consecutive_slots``), so availability is checked by *interval
@@ -22,28 +24,38 @@ Interval = tuple[datetime, datetime]
 
 
 def generate_day_slots(day: date, rules: Rules) -> list[datetime]:
-    """Every slot start on `day` per the business-hours rules (aware UTC).
+    """Slot starts whose *display date* is `day` (aware UTC), business hours only.
 
     Ignores existing bookings and the notice/horizon window.
     """
-    if day.weekday() not in rules.available_weekdays:
-        return []
-
     step = rules.slot_length
-    start_local = datetime.combine(day, time(hour=rules.business_start_hour), tzinfo=rules.tz)
-    end_local = datetime.combine(day, time(hour=rules.business_end_hour), tzinfo=rules.tz)
+    business_tz = rules.business_tz
+    display_tz = rules.display_tz
+    found: set[datetime] = set()
 
-    slots: list[datetime] = []
-    cursor = start_local
-    while cursor + step <= end_local:
-        slots.append(cursor.astimezone(UTC))
-        cursor += step
-    return slots
+    # A display day can draw slots from up to two adjacent business days.
+    for offset in (-1, 0, 1):
+        business_day = day + timedelta(days=offset)
+        if business_day.weekday() not in rules.available_weekdays:
+            continue
+        cursor = datetime.combine(
+            business_day, time(hour=rules.business_start_hour), tzinfo=business_tz
+        )
+        end_local = datetime.combine(
+            business_day, time(hour=rules.business_end_hour), tzinfo=business_tz
+        )
+        while cursor + step <= end_local:
+            moment = cursor.astimezone(UTC)
+            if moment.astimezone(display_tz).date() == day:
+                found.add(moment)
+            cursor += step
+
+    return sorted(found)
 
 
 def local_date_of(moment: datetime, rules: Rules) -> date:
-    """The calendar date `moment` falls on in the business timezone."""
-    return moment.astimezone(rules.tz).date()
+    """The calendar date `moment` falls on in the client-facing timezone."""
+    return moment.astimezone(rules.display_tz).date()
 
 
 def _confirmed_intervals(

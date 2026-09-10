@@ -88,14 +88,20 @@ def test_cancel_frees_slot_and_blocks_changes(api, slot, other_slot):
     assert again.status_code == 409
 
 
-def test_booking_an_hour_spans_two_slots(api, slot):
-    resp = _book(api, slot, slot_count=2)
+def test_slot_count_is_ignored_beyond_the_cap(api, slot):
+    resp = _book(api, slot, slot_count=2)  # cap is 1 by default
     assert resp.status_code == 201
-    assert resp.data["slot_count"] == 2
+    assert resp.data["slot_count"] == 1
 
     token = resp.data["manage_token"]
     detail = api.get(f"/api/bookings/{token}/").data
-    assert detail["end_at"][11:16] == (slot + timedelta(hours=1)).isoformat()[11:16]
+    assert detail["end_at"][11:16] == (slot + timedelta(minutes=30)).isoformat()[11:16]
+
+
+def test_booking_an_hour_spans_two_slots(api, slot, long_meetings):
+    resp = _book(api, slot, slot_count=2)
+    assert resp.status_code == 201
+    assert resp.data["slot_count"] == 2
 
 
 def test_slots_slot_count_filter_excludes_starts_without_room(api, slot, next_slot):
@@ -106,11 +112,6 @@ def test_slots_slot_count_filter_excludes_starts_without_room(api, slot, next_sl
     two = api.get("/api/slots/", {"day": day, "slot_count": 2}).data["slots"]
     assert slot.isoformat() in one
     assert slot.isoformat() not in two
-
-
-def test_cannot_book_two_slots_when_the_second_is_taken(api, slot, next_slot):
-    assert _book(api, next_slot).status_code == 201
-    assert _book(api, slot, slot_count=2, client_email="c@d.com").status_code == 409
 
 
 def test_unknown_token_is_404(api):

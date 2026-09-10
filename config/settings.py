@@ -120,18 +120,21 @@ else:
     }
 
 # --- Booking rules -------------------------------------------------
-# Business hours below are expressed in SCHEDULER["TIMEZONE"].
+# Business hours are expressed in BUSINESS_TIMEZONE; clients see times in
+# DISPLAY_TIMEZONE. e.g. a 09:00-18:00 Asia/Seoul day shows to a UTC client
+# as 00:00-09:00.
 
 SCHEDULER = {
     "HOST_NAME": env("HOST_NAME", default="Our Team"),
     "BASE_URL": env("BASE_URL", default="http://localhost:8000"),
-    "TIMEZONE": env("SCHEDULER_TIMEZONE", default="UTC"),
+    "BUSINESS_TIMEZONE": env("BUSINESS_TIMEZONE", default="Asia/Seoul"),
+    "DISPLAY_TIMEZONE": env("DISPLAY_TIMEZONE", default="UTC"),
     "BUSINESS_START_HOUR": env.int("BUSINESS_START_HOUR", default=9),
-    "BUSINESS_END_HOUR": env.int("BUSINESS_END_HOUR", default=17),
+    "BUSINESS_END_HOUR": env.int("BUSINESS_END_HOUR", default=18),
     "SLOT_MINUTES": env.int("SLOT_MINUTES", default=30),
     # Longest booking a client may make, counted in back-to-back slots.
-    # 2 with 30-minute slots => they can book 30 or 60 minutes.
-    "MAX_CONSECUTIVE_SLOTS": env.int("MAX_CONSECUTIVE_SLOTS", default=2),
+    # 1 = 30-minute meetings only. Raise it to allow longer bookings.
+    "MAX_CONSECUTIVE_SLOTS": env.int("MAX_CONSECUTIVE_SLOTS", default=1),
     "AVAILABLE_WEEKDAYS": [
         int(d) for d in env.list("AVAILABLE_WEEKDAYS", default=["0", "1", "2", "3", "4"])
     ],

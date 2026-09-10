@@ -36,9 +36,9 @@ real URL so it also works without JavaScript.
   </div>
 
   {% if selected %}
-    {% timezone rules.timezone %}
+    {% timezone rules.business_timezone %}
       <section class="day">
-        <h2>{{ selected|date:'l j F Y' }}</h2>
+        <h2>{{ selected|date:'l j F Y' }} <span class="muted">({{ rules.business_timezone }})</span></h2>
         {% for b in day_bookings %}
           <article class="bk{% if b.status == 'cancelled' %} bk--cancelled{% endif %}">
             <div class="bk-time">

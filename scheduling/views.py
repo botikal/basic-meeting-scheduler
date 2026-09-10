@@ -64,7 +64,7 @@ def _clamped_int(raw, low: int, high: int) -> int:
 
 
 def _slot_label(moment: datetime, rules: Rules) -> str:
-    return moment.astimezone(rules.tz).strftime("%A %d %B, %H:%M")
+    return moment.astimezone(rules.display_tz).strftime("%A %d %B, %H:%M")
 
 
 def _length_label(minutes: int) -> str:
@@ -109,7 +109,7 @@ def _planner_context(
         slots = [
             {
                 "iso": s.isoformat(),
-                "label": s.astimezone(rules.tz).strftime("%H:%M"),
+                "label": s.astimezone(rules.display_tz).strftime("%H:%M"),
                 "selected": start is not None and s == start,
             }
             for s in free
@@ -308,7 +308,7 @@ def staff_home(request):
 
     day_bookings: list[Booking] = []
     if selected:
-        day_start = datetime.combine(selected, time.min, tzinfo=rules.tz)
+        day_start = datetime.combine(selected, time.min, tzinfo=rules.business_tz)
         day_bookings = list(
             Booking.objects.filter(
                 start_at__gte=day_start, start_at__lt=day_start + timedelta(days=1)

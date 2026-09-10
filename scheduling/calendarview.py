@@ -88,9 +88,9 @@ def build_staff_month(
     year: int, month: int, rules: Rules, selected: date | None = None
 ) -> MonthView:
     """Month grid annotated with how many confirmed bookings fall on each day."""
-    today = timezone.localdate()
     grid = _CAL.monthdatescalendar(year, month)
-    tz = rules.tz
+    tz = rules.business_tz
+    today = timezone.now().astimezone(tz).date()
 
     span_start = datetime.combine(grid[0][0], time.min, tzinfo=tz)
     span_end = datetime.combine(grid[-1][-1] + timedelta(days=1), time.min, tzinfo=tz)
