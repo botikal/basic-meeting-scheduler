@@ -17,6 +17,10 @@ dist/
 
 # Environment / secrets
 .env
+*-service-account.json
+service-account*.json
+# Google Cloud service-account key downloads look like this:
+meeting-scheduler-*.json
 
 # Local database
 *.db
