@@ -128,10 +128,13 @@ Setup:
    (your email, or a secondary calendar's ID from its "Integrate calendar"
    settings - either works, since it's your own calendar now)
 
-A plain service account (no Workspace domain-wide delegation) also isn't
-allowed to add `attendees` to events - another reason OAuth-as-yourself is the
-simpler path here. The client still gets the Meet link, just through our own
-confirmation email rather than a Google calendar invite.
+It also means the client can be added as a real calendar **attendee**
+(`create_event` in `googlecal.py`, with `sendUpdates="all"`) - a plain service
+account (no Workspace domain-wide delegation) is blocked from inviting
+attendees at all, another reason OAuth-as-yourself is the simpler path here.
+So the client gets both our own confirmation email *and* a real Google
+Calendar invite with the Meet link attached; rescheduling and cancelling
+notify them the same way, through Google.
 
 ## Notes & limitations (v1)
 

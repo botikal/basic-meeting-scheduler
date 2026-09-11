@@ -1,5 +1,5 @@
 """Google Calendar integration: one calendar event (with a Meet link) per
-confirmed booking.
+confirmed booking, with the client invited as an attendee.
 
 Entirely optional - if GOOGLE_CALENDAR isn't configured (or an API call
 fails), these functions are no-ops and the booking itself still succeeds.
@@ -7,7 +7,10 @@ A booking without a Meet link is a lesser experience, not a broken one.
 
 Auth is OAuth2, delegated by the calendar's own owner - the app acts as that
 person, so no separate "share this calendar with a robot" step is needed (and
-no organization policy on external sharing gets in the way). One-time setup:
+no organization policy on external sharing gets in the way). This also means
+we *can* add the client as an attendee: a plain service account is blocked
+from inviting attendees without Workspace domain-wide delegation, but a real
+user's own OAuth grant isn't. One-time setup:
 
     python manage.py google_oauth_setup path/to/client_secret.json
 
@@ -55,7 +58,8 @@ def _service():
 
 
 def create_event(booking: Booking) -> tuple[str, str] | None:
-    """Create a calendar event with a Meet link for `booking`.
+    """Create a calendar event with a Meet link for `booking`, inviting the
+    client so Google emails them a real calendar invite.
 
     Returns (event_id, meet_url) on success, or None if Google Calendar isn't
     configured or the request failed.
@@ -70,14 +74,15 @@ def create_event(booking: Booking) -> tuple[str, str] | None:
             .insert(
                 calendarId=cfg["CALENDAR_ID"],
                 conferenceDataVersion=1,
+                sendUpdates="all",  # email the invite to the attendee below
                 body={
                     "summary": f"Meeting with {booking.client_name}",
-                    "description": (
-                        f"Booked via the scheduler by {booking.client_name} "
-                        f"<{booking.client_email}>.\n\n{booking.note}"
-                    ).strip(),
+                    "description": (booking.note or "").strip(),
                     "start": {"dateTime": booking.start_at.isoformat()},
                     "end": {"dateTime": booking.end_at.isoformat()},
+                    "attendees": [
+                        {"email": booking.client_email, "displayName": booking.client_name}
+                    ],
                     "conferenceData": {
                         "createRequest": {
                             "requestId": uuid.uuid4().hex,
@@ -107,6 +112,7 @@ def update_event(booking: Booking) -> None:
         service.events().patch(
             calendarId=cfg["CALENDAR_ID"],
             eventId=booking.calendar_event_id,
+            sendUpdates="all",  # let the client know the time changed
             body={
                 "start": {"dateTime": booking.start_at.isoformat()},
                 "end": {"dateTime": booking.end_at.isoformat()},
@@ -126,7 +132,9 @@ def delete_event(booking: Booking) -> None:
     try:
         service = _service()
         service.events().delete(
-            calendarId=cfg["CALENDAR_ID"], eventId=booking.calendar_event_id
+            calendarId=cfg["CALENDAR_ID"],
+            eventId=booking.calendar_event_id,
+            sendUpdates="all",  # let the client know it's cancelled
         ).execute()
     except Exception:
         logger.exception("Google Calendar: could not delete event for booking %s", booking.pk)
