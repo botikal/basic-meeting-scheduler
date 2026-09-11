@@ -21,7 +21,9 @@ class BookingSerializer(serializers.ModelSerializer):
             "status",
             "manage_token",
             "manage_url",
+            "meet_url",
         ]
+        read_only_fields = ["meet_url"]
 
     def get_manage_url(self, obj: Booking) -> str:
         return f"{Rules.current().base_url}/b/{obj.manage_token}"

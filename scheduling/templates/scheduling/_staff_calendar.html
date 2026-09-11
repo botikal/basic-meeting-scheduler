@@ -48,6 +48,9 @@ real URL so it also works without JavaScript.
             <div class="bk-who">
               <strong>{{ b.client_name }}</strong>
               <a class="bk-mail" href="mailto:{{ b.client_email }}">{{ b.client_email }}</a>
+              {% if b.status == 'confirmed' and b.meet_url %}
+                <a class="bk-mail" href="{{ b.meet_url }}">Google Meet &rarr;</a>
+              {% endif %}
               {% if b.note %}<p class="bk-note">{{ b.note }}</p>{% endif %}
             </div>
             <div class="bk-actions">

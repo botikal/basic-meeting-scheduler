@@ -78,8 +78,10 @@ scheduling/        the app
   api.py           DRF JSON endpoints
   serializers.py   DRF serializers
   admin.py         staff admin
+  googlecal.py     Google Calendar / Meet integration (optional)
+  management/commands/google_oauth_setup.py   one-time OAuth authorization
   templates/scheduling/
-tests/             pytest suite (api, pages, staff, timezones)
+tests/             pytest suite (api, pages, staff, timezones, googlecal)
 ```
 
 ## API
@@ -100,6 +102,37 @@ above 1 lets a client book several back-to-back slots as one meeting - a
 option only when the following slots are free. `Booking.slot_count` records how
 many slots a booking holds; `end_at` is derived from it.
 
+## Google Meet
+
+Optional. When configured, a confirmed booking gets a real Google Calendar
+event with a Meet link, shown in the confirmation email, the manage page, and
+the staff calendar. Leave it unconfigured and everything else works the same,
+minus the Meet link.
+
+Auth is OAuth2 as the calendar owner - not a service account - because a
+service account needs the calendar explicitly *shared* with it, which some
+Workspace organizations block for external (non-domain) accounts regardless of
+which calendar it is. OAuth sidesteps that: the owner authorizes the app
+directly, the same way they'd authorize any third-party app.
+
+Setup:
+1. Google Cloud Console -> a project -> enable the **Google Calendar API**
+2. **APIs & Services -> OAuth consent screen**: set it up (Internal if your
+   account is on Workspace and that's offered, External + add yourself as a
+   test user otherwise), with scope `.../auth/calendar.events`
+3. **APIs & Services -> Credentials -> Create Credentials -> OAuth client ID**,
+   application type **Desktop app** -> download the JSON
+4. `python manage.py google_oauth_setup path/to/that-file.json` - opens a
+   browser, sign in and approve, and it writes `token.json`
+5. In `.env`, set `GOOGLE_TOKEN_FILE=token.json` and `GOOGLE_CALENDAR_ID=...`
+   (your email, or a secondary calendar's ID from its "Integrate calendar"
+   settings - either works, since it's your own calendar now)
+
+A plain service account (no Workspace domain-wide delegation) also isn't
+allowed to add `attendees` to events - another reason OAuth-as-yourself is the
+simpler path here. The client still gets the Meet link, just through our own
+confirmation email rather than a Google calendar invite.
+
 ## Notes & limitations (v1)
 
 - Double-booking: the availability check and the insert run inside one
@@ -111,5 +144,4 @@ many slots a booking holds; `end_at` is derived from it.
   calendars or holiday handling yet.
 - No cancel/reschedule cutoff - a client can change a booking that starts in a
   minute.
-- No Google Calendar / Outlook sync or Google Meet links yet - that needs the
-  Google Calendar API (a Google Cloud project + OAuth credentials).
+- No Outlook sync.

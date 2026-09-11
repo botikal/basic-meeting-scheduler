@@ -28,6 +28,13 @@ def _scheduler_settings(settings):
     settings.SCHEDULER = dict(TEST_SCHEDULER)
 
 
+@pytest.fixture(autouse=True)
+def _no_google_calendar(settings):
+    """Never let tests hit the real Google Calendar API, even if a local .env
+    has real credentials configured for development."""
+    settings.GOOGLE_CALENDAR = {"TOKEN_FILE": "", "CALENDAR_ID": ""}
+
+
 @pytest.fixture
 def long_meetings(_scheduler_settings, settings):
     """Raise the cap so a booking can span two slots (60 minutes)."""

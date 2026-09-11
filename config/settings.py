@@ -142,6 +142,17 @@ SCHEDULER = {
     "MIN_NOTICE_HOURS": env.int("MIN_NOTICE_HOURS", default=2),
 }
 
+# --- Google Calendar / Meet -----------------------------------------
+# Optional. Leave both blank to skip it entirely - bookings still work, they
+# just won't get a Meet link. Auth is OAuth2 as the calendar's own owner (run
+# `python manage.py google_oauth_setup <client_secret.json>` once to create
+# TOKEN_FILE). See scheduling/googlecal.py and README.md.
+
+GOOGLE_CALENDAR = {
+    "TOKEN_FILE": env("GOOGLE_TOKEN_FILE", default=""),
+    "CALENDAR_ID": env("GOOGLE_CALENDAR_ID", default=""),
+}
+
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",

@@ -27,6 +27,11 @@ class Booking(models.Model):
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.CONFIRMED)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Set once a Google Calendar event has been created for this booking.
+    # Blank when Google Calendar isn't configured, or the API call failed.
+    calendar_event_id = models.CharField(max_length=255, blank=True, default="")
+    meet_url = models.URLField(blank=True, default="")
+
     class Meta:
         ordering = ["start_at"]
         constraints = [

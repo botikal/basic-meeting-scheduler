@@ -4,6 +4,7 @@ from datetime import datetime
 
 from django.db import IntegrityError, transaction
 
+from . import googlecal
 from .availability import can_book
 from .emails import send_cancellation, send_confirmation
 from .models import Booking
@@ -55,8 +56,17 @@ def create_booking(
             )
     except IntegrityError as exc:  # lost a race for the starting slot
         raise SlotUnavailable("That time was just taken.") from exc
+    _attach_meet_link(booking)
     send_confirmation(booking)
     return booking
+
+
+def _attach_meet_link(booking: Booking) -> None:
+    """Best-effort: create a calendar event and save its Meet link, if configured."""
+    created = googlecal.create_event(booking)
+    if created:
+        booking.calendar_event_id, booking.meet_url = created
+        booking.save(update_fields=["calendar_event_id", "meet_url"])
 
 
 def reschedule_booking(
@@ -80,6 +90,7 @@ def reschedule_booking(
             booking.save(update_fields=["start_at", "end_at", "slot_count"])
     except IntegrityError as exc:
         raise SlotUnavailable("That time was just taken.") from exc
+    googlecal.update_event(booking)
     send_confirmation(booking)
     return booking
 
@@ -89,5 +100,6 @@ def cancel_booking(booking: Booking) -> Booking:
         return booking
     booking.status = Booking.Status.CANCELLED
     booking.save(update_fields=["status"])
+    googlecal.delete_event(booking)
     send_cancellation(booking)
     return booking

@@ -5,3 +5,10 @@ Django==6.1.1
 djangorestframework==3.18.1
 django-environ==0.14.0
 tzdata==2026.3  # IANA timezone database (needed on Windows)
+
+# Google Calendar / Meet integration (scheduling/googlecal.py). Optional at
+# runtime - the app works without Google Calendar configured - but importable
+# code paths reference these, so they're installed unconditionally.
+google-api-python-client==2.200.0
+google-auth==2.58.0
+google-auth-oauthlib==1.4.1  # only needed to run `manage.py google_oauth_setup`

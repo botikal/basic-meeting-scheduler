@@ -21,6 +21,10 @@ dist/
 service-account*.json
 # Google Cloud service-account key downloads look like this:
 meeting-scheduler-*.json
+# OAuth client secret (downloaded from Cloud Console) and the token this
+# project's google_oauth_setup command writes after you authorize it:
+client_secret*.json
+token.json
 
 # Local database
 *.db

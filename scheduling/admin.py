@@ -17,6 +17,6 @@ class BookingAdmin(admin.ModelAdmin):
     ]
     list_filter = ["status", "start_at"]
     search_fields = ["client_name", "client_email", "manage_token"]
-    readonly_fields = ["manage_token", "created_at"]
+    readonly_fields = ["manage_token", "created_at", "calendar_event_id", "meet_url"]
     date_hierarchy = "start_at"
     ordering = ["-start_at"]

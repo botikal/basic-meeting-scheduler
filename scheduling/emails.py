@@ -27,10 +27,12 @@ def _manage_url(booking: Booking, rules: Rules) -> str:
 
 def send_confirmation(booking: Booking) -> None:
     rules = Rules.current()
+    meet_line = f"Join by Google Meet:\n  {booking.meet_url}\n\n" if booking.meet_url else ""
     body = (
         f"Hi {booking.client_name},\n\n"
         f"Your meeting with {rules.host_name} is confirmed for:\n"
         f"  {_when(booking, rules)}\n\n"
+        f"{meet_line}"
         f"Need to reschedule or cancel? Use this private link:\n"
         f"  {_manage_url(booking, rules)}\n\n"
         f"Do not share the link - it is the key to managing this booking.\n"

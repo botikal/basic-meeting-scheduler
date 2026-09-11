@@ -12,6 +12,10 @@
     <dt>Email</dt><dd>{{ booking.client_email }}</dd>
     <dt>Status</dt>
     <dd><span class="pill pill--{{ booking.status }}">{{ booking.get_status_display }}</span></dd>
+    {% if booking.is_confirmed and booking.meet_url %}
+      <dt>Video call</dt>
+      <dd><a class="link" href="{{ booking.meet_url }}">Join with Google Meet &rarr;</a></dd>
+    {% endif %}
     {% if booking.note %}<dt>Note</dt><dd>{{ booking.note }}</dd>{% endif %}
   </dl>
 
