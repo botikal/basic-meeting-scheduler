@@ -100,7 +100,7 @@ body {
   max-width: 560px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-16);
+  border-radius: var(--radius-12); /* cards = Radius/12; Radius/16 is for modals/sheets */
   box-shadow: var(--shadow);
   padding: var(--card-padding);
 }
@@ -253,14 +253,14 @@ a.cal-day--staff.is-selected {
   padding: 0;
   margin: 0 0 var(--component-gap-md);
   display: flex;
-  gap: var(--component-gap-xs);
+  gap: var(--component-gap-sm); /* equivalent radio options -> Component Gap-sm */
   flex-wrap: wrap;
 }
 .lengths legend { font-size: .85rem; color: var(--muted); margin-bottom: .4rem; }
 .len {
   display: inline-flex;
   align-items: center;
-  gap: var(--fg-gap-sm);
+  gap: var(--fg-gap-md); /* checkbox/radio box <-> its label text */
   padding: .45rem .8rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-8);
@@ -270,7 +270,9 @@ a.cal-day--staff.is-selected {
 .len.is-selected { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .len input { accent-color: var(--accent); }
 
-.field { display: grid; gap: var(--text-gap); margin: var(--component-gap-sm) 0; }
+/* Fields in one card default to Stack Group Gap - Component Gap-sm is only
+   for grouping sub-inputs of one field or an equivalent option list. */
+.field { display: grid; gap: var(--text-gap); margin: var(--stack-group-gap) 0; }
 .field > span { font-size: .85rem; color: var(--muted); }
 .field input,
 .field textarea {
@@ -312,7 +314,7 @@ a.cal-day--staff.is-selected {
 .details {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: var(--text-gap) var(--fg-gap-xl);
+  gap: var(--text-gap) var(--fg-gap-md); /* label <-> value = Foreground Gap-md */
   margin: 0 0 var(--stack-group-gap);
   font-size: .95rem;
 }
