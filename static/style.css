@@ -1,20 +1,25 @@
-/* ---- Theme tokens ---------------------------------------------------- */
+/* ---- Theme tokens -----------------------------------------------------
+   Real Wanted Lab semantic colors (pulled from the live design system's own
+   CSS: --semantic-primary-normal, --semantic-background-*, --semantic-label-*,
+   --semantic-line-*, --semantic-status-* for light and [data-theme=dark]).
+   Kept our own variable names below so nothing else in this file had to
+   change - only the values are Wanted's. */
 :root {
   color-scheme: light dark;
-  --bg: #f4f4f5;
-  --surface: #ffffff;
-  --surface-2: #f8f8fa;
-  --border: #e3e3e8;
-  --text: #1c1c1f;
-  --muted: #6b6b74;
-  --accent: #3f5bd9;
+  --bg: #f7f7f8;              /* semantic.background.normal.alternative */
+  --surface: #ffffff;         /* semantic.background.elevated.normal */
+  --surface-2: #f7f7f8;       /* semantic.background.elevated.alternative */
+  --border: #e1e2e4;          /* semantic.line.solid.normal */
+  --text: #171719;            /* semantic.label.normal */
+  --muted: rgba(55, 56, 60, .61);   /* semantic.label.alternative */
+  --accent: #0066ff;          /* semantic.primary.normal */
   --accent-contrast: #ffffff;
-  --accent-soft: #eaeefc;
-  --danger: #c8362f;
-  --ok-bg: #e4f6e9;
-  --ok-text: #1c5a33;
-  --err-bg: #fde7e6;
-  --err-text: #8f2b26;
+  --accent-soft: rgba(0, 102, 255, .08);
+  --danger: #ff4242;          /* semantic.status.negative */
+  --ok-bg: rgba(0, 191, 64, .12);
+  --ok-text: #00bf40;         /* semantic.status.positive */
+  --err-bg: rgba(255, 66, 66, .12);
+  --err-text: #ff4242;
   --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 8px 24px rgba(0, 0, 0, .06);
 
   /* ---- Layout tokens ---------------------------------------------
@@ -57,20 +62,20 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #17171a;
-    --surface: #202024;
-    --surface-2: #26262b;
-    --border: #34343b;
-    --text: #ececef;
-    --muted: #9a9aa4;
-    --accent: #8fa4ff;
-    --accent-contrast: #16161a;
-    --accent-soft: #2a2f47;
-    --danger: #ff8a82;
-    --ok-bg: #1e3a29;
-    --ok-text: #b8e8c8;
-    --err-bg: #3d2321;
-    --err-text: #f6c3bf;
+    --bg: #0f0f10;              /* semantic.background.normal.alternative */
+    --surface: #212225;         /* semantic.background.elevated.normal */
+    --surface-2: #141415;       /* semantic.background.elevated.alternative */
+    --border: #37383c;          /* semantic.line.solid.normal */
+    --text: #f7f7f8;            /* semantic.label.normal */
+    --muted: rgba(174, 176, 182, .61);  /* semantic.label.alternative */
+    --accent: #3385ff;          /* semantic.primary.normal */
+    --accent-contrast: #ffffff;
+    --accent-soft: rgba(51, 133, 255, .18);
+    --danger: #ff6363;          /* semantic.status.negative */
+    --ok-bg: rgba(30, 212, 90, .16);
+    --ok-text: #1ed45a;         /* semantic.status.positive */
+    --err-bg: rgba(255, 99, 99, .16);
+    --err-text: #ff6363;
     --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
   }
 }
