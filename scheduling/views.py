@@ -14,6 +14,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
 from .availability import available_slots, consecutive_capacity, local_date_of
@@ -164,6 +165,7 @@ def _render_planner(request, page_template: str, context: dict, *, status: int =
 # --- Booking -------------------------------------------------------------
 
 
+@never_cache
 def index(request):
     rules = Rules.current(display_timezone=client_timezone(request))
     start = _parse_start(request.GET.get("start"))
@@ -182,6 +184,7 @@ def index(request):
     return _render_planner(request, "scheduling/index.html", context)
 
 
+@never_cache
 def book(request):
     if request.method != "POST":
         return redirect("scheduling:index")
@@ -227,6 +230,7 @@ def book(request):
 # --- Manage / reschedule / cancel --------------------------------------
 
 
+@never_cache
 def manage(request, token):
     rules = Rules.current(display_timezone=client_timezone(request))
     booking = get_object_or_404(Booking, manage_token=token)

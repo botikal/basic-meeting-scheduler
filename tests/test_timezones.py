@@ -7,6 +7,7 @@ import pytest
 from django.test import RequestFactory
 from django.utils import timezone
 
+from scheduling.services import create_booking
 from scheduling.tzdetect import client_timezone
 
 pytestmark = pytest.mark.django_db
@@ -102,3 +103,14 @@ def test_visitor_timezone_shifts_the_displayed_slot_times(client):
     client.cookies["tz"] = "Asia/Seoul"  # UTC+9, no DST to worry about
     body = client.get("/", {"date": day.isoformat()}).content.decode()
     assert "18:00" in body  # 09:00 UTC == 18:00 KST
+
+
+def test_client_facing_pages_are_never_cached(client, slot):
+    """A browser must never serve a stale (pre-cookie) page from its HTTP
+    cache on the tz-detection reload - the response has to say so explicitly,
+    since cookies aren't part of the cache key by default."""
+    booking = create_booking(
+        client_name="Cache Check", client_email="cc@example.com", start_at=slot
+    )
+    for resp in (client.get("/"), client.get(f"/b/{booking.manage_token}/")):
+        assert "no-store" in resp.headers["Cache-Control"]
