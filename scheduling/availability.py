@@ -24,7 +24,8 @@ Interval = tuple[datetime, datetime]
 
 
 def generate_day_slots(day: date, rules: Rules) -> list[datetime]:
-    """Slot starts whose *display date* is `day` (aware UTC), business hours only.
+    """Slot starts whose *display date* is `day` (aware UTC), business hours
+    only, minus the lunch break.
 
     Ignores existing bookings and the notice/horizon window.
     """
@@ -44,7 +45,16 @@ def generate_day_slots(day: date, rules: Rules) -> list[datetime]:
         end_local = datetime.combine(
             business_day, time(hour=rules.business_end_hour), tzinfo=business_tz
         )
+        lunch_start = datetime.combine(
+            business_day, time(hour=rules.lunch_start_hour), tzinfo=business_tz
+        )
+        lunch_end = datetime.combine(
+            business_day, time(hour=rules.lunch_end_hour), tzinfo=business_tz
+        )
         while cursor + step <= end_local:
+            if cursor < lunch_end and cursor + step > lunch_start:
+                cursor += step
+                continue
             moment = cursor.astimezone(UTC)
             if moment.astimezone(display_tz).date() == day:
                 found.add(moment)

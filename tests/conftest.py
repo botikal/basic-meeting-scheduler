@@ -15,6 +15,8 @@ TEST_SCHEDULER = {
     "DISPLAY_TIMEZONE": "UTC",
     "BUSINESS_START_HOUR": 9,
     "BUSINESS_END_HOUR": 17,
+    "LUNCH_START_HOUR": 13,
+    "LUNCH_END_HOUR": 13,
     "SLOT_MINUTES": 30,
     "MAX_CONSECUTIVE_SLOTS": 1,
     "AVAILABLE_WEEKDAYS": [0, 1, 2, 3, 4],
@@ -39,6 +41,13 @@ def _no_google_calendar(settings):
 def long_meetings(_scheduler_settings, settings):
     """Raise the cap so a booking can span two slots (60 minutes)."""
     settings.SCHEDULER["MAX_CONSECUTIVE_SLOTS"] = 2
+
+
+@pytest.fixture
+def with_lunch_break(_scheduler_settings, settings):
+    """Enable the lunch break (12:00-13:00; disabled by default in tests)."""
+    settings.SCHEDULER["LUNCH_START_HOUR"] = 12
+    settings.SCHEDULER["LUNCH_END_HOUR"] = 13
 
 
 def _weekday_at_nine(day_offset: int) -> datetime:

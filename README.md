@@ -19,6 +19,10 @@ and clients see every time in `DISPLAY_TIMEZONE` (default `UTC`). So a Korean
 09:00-18:00 workday shows to a client as 00:00-09:00 UTC. The staff calendar shows
 times in `BUSINESS_TIMEZONE`.
 
+`LUNCH_START_HOUR`/`LUNCH_END_HOUR` (also in `BUSINESS_TIMEZONE`) carve a daily
+break with no bookable slots out of business hours - equal values (the
+default) mean no break.
+
 ## Setup
 
 ```bash

@@ -131,6 +131,10 @@ SCHEDULER = {
     "DISPLAY_TIMEZONE": env("DISPLAY_TIMEZONE", default="UTC"),
     "BUSINESS_START_HOUR": env.int("BUSINESS_START_HOUR", default=9),
     "BUSINESS_END_HOUR": env.int("BUSINESS_END_HOUR", default=18),
+    # A daily break with no bookable slots (business timezone). Equal
+    # start/end (the default) means no break.
+    "LUNCH_START_HOUR": env.int("LUNCH_START_HOUR", default=13),
+    "LUNCH_END_HOUR": env.int("LUNCH_END_HOUR", default=13),
     "SLOT_MINUTES": env.int("SLOT_MINUTES", default=30),
     # Longest booking a client may make, counted in back-to-back slots.
     # 1 = 30-minute meetings only. Raise it to allow longer bookings.

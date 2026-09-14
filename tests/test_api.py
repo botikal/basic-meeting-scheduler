@@ -116,3 +116,13 @@ def test_slots_slot_count_filter_excludes_starts_without_room(api, slot, next_sl
 
 def test_unknown_token_is_404(api):
     assert api.get("/api/bookings/nope/").status_code == 404
+
+
+def test_lunch_break_slots_are_excluded(api, slot, with_lunch_break):
+    times = [
+        s[11:16] for s in api.get("/api/slots/", {"day": slot.date().isoformat()}).data["slots"]
+    ]
+    assert "12:00" not in times
+    assert "12:30" not in times
+    assert "11:30" in times
+    assert "13:00" in times

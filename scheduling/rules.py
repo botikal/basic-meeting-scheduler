@@ -18,6 +18,10 @@ class Rules:
     display_timezone: str
     business_start_hour: int
     business_end_hour: int
+    # A daily break with no bookable slots, in business_timezone. Equal
+    # start/end (the default) means no break.
+    lunch_start_hour: int
+    lunch_end_hour: int
     slot_minutes: int
     max_consecutive_slots: int
     available_weekdays: tuple[int, ...]
@@ -37,6 +41,8 @@ class Rules:
             display_timezone=display_timezone or cfg["DISPLAY_TIMEZONE"],
             business_start_hour=cfg["BUSINESS_START_HOUR"],
             business_end_hour=cfg["BUSINESS_END_HOUR"],
+            lunch_start_hour=cfg["LUNCH_START_HOUR"],
+            lunch_end_hour=cfg["LUNCH_END_HOUR"],
             slot_minutes=cfg["SLOT_MINUTES"],
             max_consecutive_slots=cfg["MAX_CONSECUTIVE_SLOTS"],
             available_weekdays=tuple(cfg["AVAILABLE_WEEKDAYS"]),
