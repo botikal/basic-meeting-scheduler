@@ -106,6 +106,33 @@ def test_create_event_invites_the_client_and_emails_the_invite(slot, settings):
     assert kwargs["body"]["attendees"] == [
         {"email": "dana@example.com", "displayName": "Dana Client"}
     ]
+    assert kwargs["body"]["summary"] == "Meeting with Dana Client"
+
+
+def test_event_title_names_the_service_when_one_was_picked(slot, settings):
+    settings.GOOGLE_CALENDAR = {"TOKEN_FILE": "unused.json", "CALENDAR_ID": "cal@example.com"}
+    fake_service = MagicMock()
+    fake_service.events.return_value.insert.return_value.execute.return_value = {"id": "evt1"}
+
+    with patch("scheduling.googlecal._service", return_value=fake_service):
+        googlecal.create_event(_unsaved_booking(slot, service="headhunting"))
+
+    _, kwargs = fake_service.events.return_value.insert.call_args
+    assert kwargs["body"]["summary"] == "Meeting for Headhunting with Dana Client"
+
+
+def test_event_title_shortens_the_global_service_label(slot, settings):
+    """Booking.Service's GLOBAL label ("Wanted Global service introduction")
+    is written for the landing page, not a calendar title."""
+    settings.GOOGLE_CALENDAR = {"TOKEN_FILE": "unused.json", "CALENDAR_ID": "cal@example.com"}
+    fake_service = MagicMock()
+    fake_service.events.return_value.insert.return_value.execute.return_value = {"id": "evt1"}
+
+    with patch("scheduling.googlecal._service", return_value=fake_service):
+        googlecal.create_event(_unsaved_booking(slot, service="global"))
+
+    _, kwargs = fake_service.events.return_value.insert.call_args
+    assert kwargs["body"]["summary"] == "Meeting for Global services with Dana Client"
 
 
 def test_update_event_notifies_the_attendee(slot, other_slot, settings):

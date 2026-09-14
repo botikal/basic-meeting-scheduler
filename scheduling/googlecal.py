@@ -117,6 +117,19 @@ def busy_intervals(
     return [(datetime.fromisoformat(b["start"]), datetime.fromisoformat(b["end"])) for b in busy]
 
 
+# Booking.Service labels are written for the landing page ("Wanted Global
+# service introduction") - too long for a calendar title, so shorten just
+# this one; the others already read fine as-is.
+_CALENDAR_SERVICE_TITLES = {"global": "Global services"}
+
+
+def _event_title(booking: Booking) -> str:
+    if booking.service:
+        label = _CALENDAR_SERVICE_TITLES.get(booking.service, booking.get_service_display())
+        return f"Meeting for {label} with {booking.client_name}"
+    return f"Meeting with {booking.client_name}"
+
+
 def create_event(booking: Booking) -> tuple[str, str] | None:
     """Create a calendar event with a Meet link for `booking`, inviting the
     client so Google emails them a real calendar invite.
@@ -136,7 +149,7 @@ def create_event(booking: Booking) -> tuple[str, str] | None:
                 conferenceDataVersion=1,
                 sendUpdates="all",  # email the invite to the attendee below
                 body={
-                    "summary": f"Meeting with {booking.client_name}",
+                    "summary": _event_title(booking),
                     "description": (booking.note or "").strip(),
                     "start": {"dateTime": booking.start_at.isoformat()},
                     "end": {"dateTime": booking.end_at.isoformat()},
