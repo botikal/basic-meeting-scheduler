@@ -25,4 +25,8 @@
     <code>python manage.py createsuperuser</code>.
   </p>
 {% endblock %}
-{% block foot %}<a href="{% url 'scheduling:index' %}">&larr; Back to booking</a>{% endblock %}
+{% block foot %}
+  <a href="{% url 'scheduling:landing' %}" onclick="if (history.length > 1) { history.back(); return false; }">
+    &larr; Back to booking
+  </a>
+{% endblock %}
