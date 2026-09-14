@@ -57,7 +57,7 @@ def create_booking(
     except IntegrityError as exc:  # lost a race for the starting slot
         raise SlotUnavailable("That time was just taken.") from exc
     _attach_meet_link(booking)
-    send_confirmation(booking)
+    send_confirmation(booking, rules)
     return booking
 
 
@@ -91,15 +91,15 @@ def reschedule_booking(
     except IntegrityError as exc:
         raise SlotUnavailable("That time was just taken.") from exc
     googlecal.update_event(booking)
-    send_confirmation(booking)
+    send_confirmation(booking, rules)
     return booking
 
 
-def cancel_booking(booking: Booking) -> Booking:
+def cancel_booking(booking: Booking, rules: Rules | None = None) -> Booking:
     if not booking.is_confirmed:
         return booking
     booking.status = Booking.Status.CANCELLED
     booking.save(update_fields=["status"])
     googlecal.delete_event(booking)
-    send_cancellation(booking)
+    send_cancellation(booking, rules)
     return booking

@@ -25,8 +25,8 @@ def _manage_url(booking: Booking, rules: Rules) -> str:
     return f"{rules.base_url}/b/{booking.manage_token}"
 
 
-def send_confirmation(booking: Booking) -> None:
-    rules = Rules.current()
+def send_confirmation(booking: Booking, rules: Rules | None = None) -> None:
+    rules = rules or Rules.current()
     meet_line = (
         f"Join by Google Meet:\n  {booking.meet_url}\n"
         f"(you'll also get a separate calendar invite from Google)\n\n"
@@ -50,8 +50,8 @@ def send_confirmation(booking: Booking) -> None:
     )
 
 
-def send_cancellation(booking: Booking) -> None:
-    rules = Rules.current()
+def send_cancellation(booking: Booking, rules: Rules | None = None) -> None:
+    rules = rules or Rules.current()
     body = (
         f"Hi {booking.client_name},\n\n"
         f"Your meeting with {rules.host_name} on {_when(booking, rules)} "

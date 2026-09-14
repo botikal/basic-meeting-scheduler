@@ -2,10 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <script>
+  (function () {
+    // Apply a saved theme choice before first paint, so there's no flash.
+    try {
+      var t = localStorage.getItem("theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+    } catch (e) {}
+    // Detect the visitor's own timezone once and hand it to the server via a
+    // cookie, so times render in *their* zone instead of a fixed default.
+    try {
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      var m = document.cookie.match(/(?:^|; )tz=([^;]*)/);
+      var known = m ? decodeURIComponent(m[1]) : null;
+      if (tz && tz !== known) {
+        document.cookie = "tz=" + encodeURIComponent(tz) + ";path=/;max-age=31536000;SameSite=Lax";
+        location.reload();
+      }
+    } catch (e) {}
+  })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ rules.host_name }}{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'style.css' %}">
   <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
+  <script src="{% static 'theme.js' %}" defer></script>
 </head>
 <body>
   <main class="card">
@@ -20,6 +41,8 @@
   </main>
   <footer class="foot">
     {% block foot %}<a href="{% url 'scheduling:staff-home' %}">Staff</a>{% endblock %}
+    <span aria-hidden="true"> &middot; </span>
+    <button type="button" id="theme-toggle" class="theme-toggle">Dark mode</button>
   </footer>
 </body>
 </html>

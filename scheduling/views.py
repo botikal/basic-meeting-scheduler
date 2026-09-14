@@ -32,6 +32,7 @@ from .services import (
     create_booking,
     reschedule_booking,
 )
+from .tzdetect import client_timezone
 
 
 def _is_htmx(request) -> bool:
@@ -164,7 +165,7 @@ def _render_planner(request, page_template: str, context: dict, *, status: int =
 
 
 def index(request):
-    rules = Rules.current()
+    rules = Rules.current(display_timezone=client_timezone(request))
     start = _parse_start(request.GET.get("start"))
     selected = _parse_date(request.GET.get("date")) or (
         local_date_of(start, rules) if start else None
@@ -185,7 +186,7 @@ def book(request):
     if request.method != "POST":
         return redirect("scheduling:index")
 
-    rules = Rules.current()
+    rules = Rules.current(display_timezone=client_timezone(request))
     start = _parse_start(request.POST.get("start"))
     selected = local_date_of(start, rules) if start else None
     form = BookingDetailsForm(request.POST)
@@ -227,7 +228,7 @@ def book(request):
 
 
 def manage(request, token):
-    rules = Rules.current()
+    rules = Rules.current(display_timezone=client_timezone(request))
     booking = get_object_or_404(Booking, manage_token=token)
     start = _parse_start(request.GET.get("start"))
     selected = _parse_date(request.GET.get("date")) or (
@@ -251,7 +252,7 @@ def reschedule(request, token):
     if request.method != "POST":
         return redirect("scheduling:manage", token=token)
 
-    rules = Rules.current()
+    rules = Rules.current(display_timezone=client_timezone(request))
     booking = get_object_or_404(Booking, manage_token=token)
     start = _parse_start(request.POST.get("start"))
     try:
@@ -267,7 +268,8 @@ def reschedule(request, token):
 def cancel(request, token):
     booking = get_object_or_404(Booking, manage_token=token)
     if request.method == "POST":
-        cancel_booking(booking)
+        rules = Rules.current(display_timezone=client_timezone(request))
+        cancel_booking(booking, rules)
         messages.success(request, "Your meeting has been cancelled.")
     return _redirect(request, reverse("scheduling:manage", args=[token]))
 

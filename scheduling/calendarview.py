@@ -42,7 +42,7 @@ def _shift(year: int, month: int, delta: int) -> tuple[int, int]:
 
 
 def build_month(year: int, month: int, rules: Rules, selected: date | None = None) -> MonthView:
-    today = timezone.localdate()
+    today = timezone.now().astimezone(rules.display_tz).date()
     grid = _CAL.monthdatescalendar(year, month)
     flat = [d for week in grid for d in week]
     availability = days_with_availability(flat, rules)

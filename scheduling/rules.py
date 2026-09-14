@@ -25,13 +25,16 @@ class Rules:
     min_notice_hours: int
 
     @classmethod
-    def current(cls) -> Rules:
+    def current(cls, *, display_timezone: str | None = None) -> Rules:
+        """The configured rules, optionally showing times in a different
+        (visitor-specific) timezone instead of the configured default -
+        see tzdetect.client_timezone. Business hours are unaffected."""
         cfg = settings.SCHEDULER
         return cls(
             host_name=cfg["HOST_NAME"],
             base_url=cfg["BASE_URL"].rstrip("/"),
             business_timezone=cfg["BUSINESS_TIMEZONE"],
-            display_timezone=cfg["DISPLAY_TIMEZONE"],
+            display_timezone=display_timezone or cfg["DISPLAY_TIMEZONE"],
             business_start_hour=cfg["BUSINESS_START_HOUR"],
             business_end_hour=cfg["BUSINESS_END_HOUR"],
             slot_minutes=cfg["SLOT_MINUTES"],

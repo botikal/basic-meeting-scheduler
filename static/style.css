@@ -61,8 +61,11 @@
   --radius-full: 9999px; /* pills, dots, avatars */
 }
 
+/* Dark palette: applied when the OS/browser prefers dark (and the visitor
+   hasn't explicitly picked "light" with the toggle in the footer), or
+   whenever the toggle has explicitly picked "dark" - either way wins. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #0f0f10;              /* semantic.background.normal.alternative */
     --surface: #212225;         /* semantic.background.elevated.normal */
     --surface-2: #141415;       /* semantic.background.elevated.alternative */
@@ -80,6 +83,25 @@
     --err-text: #ff6363;
     --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0f0f10;
+  --surface: #212225;
+  --surface-2: #141415;
+  --border: #37383c;
+  --border-soft: #2e2f33;
+  --text: #f7f7f8;
+  --muted: rgba(174, 176, 182, .61);
+  --accent: #3385ff;
+  --accent-contrast: #ffffff;
+  --accent-soft: rgba(51, 133, 255, .18);
+  --danger: #ff6363;
+  --ok-bg: rgba(30, 212, 90, .16);
+  --ok-text: #1ed45a;
+  --err-bg: rgba(255, 99, 99, .16);
+  --err-text: #ff6363;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
 }
 
 /* ---- Base --------------------------------------------------------- */
@@ -345,6 +367,17 @@ a.cal-day--staff.is-selected {
 /* ---- Staff area ------------------------------------------- */
 .foot a { color: var(--muted); text-decoration: none; }
 .foot a:hover { color: var(--text); }
+.theme-toggle {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: .8rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.theme-toggle:hover { color: var(--text); }
 
 .staff-head {
   display: flex;

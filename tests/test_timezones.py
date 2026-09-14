@@ -4,7 +4,10 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
+from django.test import RequestFactory
 from django.utils import timezone
+
+from scheduling.tzdetect import client_timezone
 
 pytestmark = pytest.mark.django_db
 
@@ -58,3 +61,44 @@ def test_can_book_a_korean_morning_slot(client, seoul_hours):
         },
     )
     assert resp.status_code == 302
+
+
+# --- Detecting the visitor's own timezone (client-side cookie) -------------
+
+
+def test_client_timezone_reads_a_valid_cookie():
+    request = RequestFactory().get("/")
+    request.COOKIES["tz"] = "Europe/Paris"
+    assert client_timezone(request) == "Europe/Paris"
+
+
+def test_client_timezone_is_none_without_a_cookie():
+    assert client_timezone(RequestFactory().get("/")) is None
+
+
+def test_client_timezone_ignores_a_bogus_value():
+    request = RequestFactory().get("/")
+    request.COOKIES["tz"] = "Not/AZone"
+    assert client_timezone(request) is None
+
+
+def test_booking_page_defaults_to_configured_timezone_without_a_cookie(client):
+    assert "times shown in UTC" in client.get("/").content.decode()
+
+
+def test_visitor_timezone_cookie_overrides_the_display_timezone(client):
+    client.cookies["tz"] = "America/New_York"
+    assert "times shown in America/New_York" in client.get("/").content.decode()
+
+
+def test_a_bogus_timezone_cookie_falls_back_to_the_default(client):
+    client.cookies["tz"] = "Not/AZone"
+    assert "times shown in UTC" in client.get("/").content.decode()
+
+
+def test_visitor_timezone_shifts_the_displayed_slot_times(client):
+    # Default test settings: business hours 09:00-17:00 UTC (see conftest).
+    day = _next_weekday()
+    client.cookies["tz"] = "Asia/Seoul"  # UTC+9, no DST to worry about
+    body = client.get("/", {"date": day.isoformat()}).content.decode()
+    assert "18:00" in body  # 09:00 UTC == 18:00 KST
