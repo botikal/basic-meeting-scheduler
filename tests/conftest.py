@@ -9,7 +9,7 @@ from django.utils import timezone
 UTC = ZoneInfo("UTC")
 
 TEST_SCHEDULER = {
-    "HOST_NAME": "Acme Corp",
+    "HOST_NAME": "Wantedlab",
     "BASE_URL": "http://testserver",
     "BUSINESS_TIMEZONE": "UTC",
     "DISPLAY_TIMEZONE": "UTC",
