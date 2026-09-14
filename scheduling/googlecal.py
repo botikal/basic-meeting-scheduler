@@ -32,7 +32,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
+SCOPES = [
+    "https://www.googleapis.com/auth/calendar.events",
+    # Needed for freebusy.query (the Japan/main-calendar availability checks
+    # in availability.py) - calendar.events alone doesn't cover it.
+    "https://www.googleapis.com/auth/calendar.freebusy",
+]
 
 
 def _config() -> dict[str, str] | None:
