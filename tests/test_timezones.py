@@ -73,6 +73,16 @@ def test_client_timezone_reads_a_valid_cookie():
     assert client_timezone(request) == "Europe/Paris"
 
 
+def test_client_timezone_decodes_the_url_encoded_cookie_value():
+    # base.html sets the cookie via encodeURIComponent (zone names contain
+    # "/"), so the raw cookie value is percent-encoded - this is what Django's
+    # request.COOKIES actually contains for a real browser request, unlike a
+    # plain "Asia/Seoul" string set directly in a test.
+    request = RequestFactory().get("/")
+    request.COOKIES["tz"] = "Asia%2FSeoul"
+    assert client_timezone(request) == "Asia/Seoul"
+
+
 def test_client_timezone_is_none_without_a_cookie():
     assert client_timezone(RequestFactory().get("/")) is None
 

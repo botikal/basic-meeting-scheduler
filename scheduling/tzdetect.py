@@ -2,10 +2,12 @@
 
 base.html runs a small script that reads the browser's IANA timezone
 (`Intl.DateTimeFormat().resolvedOptions().timeZone`) and stores it in a `tz`
-cookie. This reads that cookie back, so client-facing pages can show times in
-the visitor's own zone instead of a fixed default.
+cookie (URL-encoded, since zone names contain "/"). This reads that cookie
+back, so client-facing pages can show times in the visitor's own zone instead
+of a fixed default.
 """
 
+from urllib.parse import unquote
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 COOKIE_NAME = "tz"
@@ -16,8 +18,9 @@ def client_timezone(request) -> str | None:
     raw = request.COOKIES.get(COOKIE_NAME)
     if not raw:
         return None
+    tz = unquote(raw)  # Django doesn't decode cookie values the way it does query params
     try:
-        ZoneInfo(raw)
+        ZoneInfo(tz)
     except ZoneInfoNotFoundError, ValueError:
         return None
-    return raw
+    return tz
