@@ -9,7 +9,8 @@
   --bg: #f7f7f8;              /* semantic.background.normal.alternative */
   --surface: #ffffff;         /* semantic.background.elevated.normal */
   --surface-2: #f7f7f8;       /* semantic.background.elevated.alternative */
-  --border: #e1e2e4;          /* semantic.line.solid.normal */
+  --border: #e1e2e4;          /* semantic.line.solid.normal - control outlines */
+  --border-soft: #f4f4f5;     /* semantic.line.solid.alternative - internal dividers */
   --text: #171719;            /* semantic.label.normal */
   --muted: rgba(55, 56, 60, .61);   /* semantic.label.alternative */
   --accent: #0066ff;          /* semantic.primary.normal */
@@ -65,7 +66,8 @@
     --bg: #0f0f10;              /* semantic.background.normal.alternative */
     --surface: #212225;         /* semantic.background.elevated.normal */
     --surface-2: #141415;       /* semantic.background.elevated.alternative */
-    --border: #37383c;          /* semantic.line.solid.normal */
+    --border: #37383c;          /* semantic.line.solid.normal - control outlines */
+    --border-soft: #2e2f33;     /* semantic.line.solid.alternative - internal dividers */
     --text: #f7f7f8;            /* semantic.label.normal */
     --muted: rgba(174, 176, 182, .61);  /* semantic.label.alternative */
     --accent: #3385ff;          /* semantic.primary.normal */
@@ -322,7 +324,7 @@ a.cal-day--staff.is-selected {
 .details dd { margin: 0; }
 
 .block {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-soft); /* internal divider, not a control outline */
   padding-top: var(--component-gap-lg);
   margin-top: var(--stack-group-gap);
 }
@@ -357,7 +359,7 @@ a.cal-day--staff.is-selected {
   text-transform: uppercase;
   letter-spacing: .04em;
   color: var(--muted);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-soft);
   padding-bottom: .35rem;
   margin-bottom: .6rem;
 }
@@ -368,7 +370,7 @@ a.cal-day--staff.is-selected {
   gap: var(--spacing-4) var(--fg-gap-xl);
   align-items: start;
   padding: .7rem 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-soft);
 }
 .bk:last-child { border-bottom: 0; }
 .bk--cancelled { opacity: .5; }
