@@ -46,14 +46,14 @@ def test_slots_are_korean_working_hours_shown_in_utc(client, seoul_hours):
 
 
 def test_booking_page_says_utc(client, seoul_hours):
-    assert "times shown in UTC" in client.get("/").content.decode()
+    assert "times shown in UTC" in client.get("/schedule/").content.decode()
 
 
 def test_can_book_a_korean_morning_slot(client, seoul_hours):
     day = _next_weekday()
     start = datetime(day.year, day.month, day.day, 1, 0, tzinfo=UTC)  # 10:00 KST
     resp = client.post(
-        "/book/",
+        "/schedule/book/",
         {
             "client_name": "Global Client",
             "client_email": "gc@example.com",
@@ -94,24 +94,24 @@ def test_client_timezone_ignores_a_bogus_value():
 
 
 def test_booking_page_defaults_to_configured_timezone_without_a_cookie(client):
-    assert "times shown in UTC" in client.get("/").content.decode()
+    assert "times shown in UTC" in client.get("/schedule/").content.decode()
 
 
 def test_visitor_timezone_cookie_overrides_the_display_timezone(client):
     client.cookies["tz"] = "America/New_York"
-    assert "times shown in America/New_York" in client.get("/").content.decode()
+    assert "times shown in America/New_York" in client.get("/schedule/").content.decode()
 
 
 def test_a_bogus_timezone_cookie_falls_back_to_the_default(client):
     client.cookies["tz"] = "Not/AZone"
-    assert "times shown in UTC" in client.get("/").content.decode()
+    assert "times shown in UTC" in client.get("/schedule/").content.decode()
 
 
 def test_visitor_timezone_shifts_the_displayed_slot_times(client):
     # Default test settings: business hours 09:00-17:00 UTC (see conftest).
     day = _next_weekday()
     client.cookies["tz"] = "Asia/Seoul"  # UTC+9, no DST to worry about
-    body = client.get("/", {"date": day.isoformat()}).content.decode()
+    body = client.get("/schedule/", {"date": day.isoformat()}).content.decode()
     assert "18:00" in body  # 09:00 UTC == 18:00 KST
 
 
@@ -122,5 +122,5 @@ def test_client_facing_pages_are_never_cached(client, slot):
     booking = create_booking(
         client_name="Cache Check", client_email="cc@example.com", start_at=slot
     )
-    for resp in (client.get("/"), client.get(f"/b/{booking.manage_token}/")):
+    for resp in (client.get("/schedule/"), client.get(f"/b/{booking.manage_token}/")):
         assert "no-store" in resp.headers["Cache-Control"]

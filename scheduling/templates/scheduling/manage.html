@@ -7,6 +7,7 @@
 
   <dl class="details">
     <dt>With</dt><dd>{{ rules.host_name }}</dd>
+    {% if booking.service %}<dt>Service</dt><dd>{{ booking.get_service_display }}</dd>{% endif %}
     <dt>When</dt><dd>{{ when }} <span class="muted">({{ rules.display_timezone }})</span></dd>
     <dt>Name</dt><dd>{{ booking.client_name }}</dd>
     <dt>Email</dt><dd>{{ booking.client_email }}</dd>
@@ -35,6 +36,6 @@
       </form>
     </section>
   {% else %}
-    <p><a class="link" href="{% url 'scheduling:index' %}">Book a new time &rarr;</a></p>
+    <p><a class="link" href="{% url 'scheduling:landing' %}">Book a new time &rarr;</a></p>
   {% endif %}
 {% endblock %}

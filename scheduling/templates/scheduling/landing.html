@@ -1,0 +1,17 @@
+{% extends "scheduling/base.html" %}
+{% block title %}Book a meeting with {{ rules.host_name }}{% endblock %}
+{% block content %}
+  <header class="head">
+    <h1>What can we help you with?</h1>
+    <p class="muted">Pick a service to see open times and book a meeting.</p>
+  </header>
+
+  <div class="service-list">
+    {% for opt in options %}
+      <a class="service-card" href="{% url 'scheduling:index' %}?service={{ opt.value }}">
+        <strong>{{ opt.label }}</strong>
+        <span class="muted">{{ opt.description }}</span>
+      </a>
+    {% endfor %}
+  </div>
+{% endblock %}

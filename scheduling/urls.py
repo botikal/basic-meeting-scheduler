@@ -9,8 +9,9 @@ app_name = "scheduling"
 
 urlpatterns = [
     # Client-facing pages
-    path("", views.index, name="index"),
-    path("book/", views.book, name="book"),
+    path("", views.landing, name="landing"),
+    path("schedule/", views.index, name="index"),
+    path("schedule/book/", views.book, name="book"),
     path("b/<str:token>/", views.manage, name="manage"),
     path("b/<str:token>/reschedule/", views.reschedule, name="reschedule"),
     path("b/<str:token>/cancel/", views.cancel, name="cancel"),

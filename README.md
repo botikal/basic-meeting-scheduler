@@ -47,7 +47,8 @@ python manage.py runserver
 
 | URL | What it is |
 |-----|------------|
-| http://localhost:8000/ | Client booking page |
+| http://localhost:8000/ | Landing page - pick a service (Headhunting / Japan services / Wanted Global) |
+| http://localhost:8000/schedule/ | Client booking calendar |
 | http://localhost:8000/b/&lt;token&gt;/ | Manage a booking (link is in the confirmation email) |
 | http://localhost:8000/admin/ | Staff view of all bookings (login required) |
 | http://localhost:8000/api/ | Browsable JSON API |
@@ -81,6 +82,7 @@ scheduling/        the app
   googlecal.py     Google Calendar / Meet integration (optional)
   management/commands/google_oauth_setup.py   one-time OAuth authorization
   templates/scheduling/
+  templates/scheduling/landing.html   the service-picker cover page
 tests/             pytest suite (api, pages, staff, timezones, googlecal)
 ```
 
@@ -101,6 +103,23 @@ above 1 lets a client book several back-to-back slots as one meeting - a
 "Meeting length" choice then appears on the booking form, offering a longer
 option only when the following slots are free. `Booking.slot_count` records how
 many slots a booking holds; `end_at` is derived from it.
+
+## Service picker & the Japan calendar check
+
+Before reaching the booking calendar, a client picks one of three services on
+the landing page (`Booking.Service`: `headhunting`, `japan`, `global`). The
+choice is carried through the calendar as a `?service=` query param / hidden
+form field and saved on the booking (`Booking.service`) - it's purely
+informational for Headhunting and Wanted Global, shown on the manage page and
+staff calendar, and all three still book onto the same shared calendar.
+
+Japan services is the exception: if `GOOGLE_CALENDAR_ID_JAPAN` is set in
+`.env`, availability for a Japan booking is *also* checked against that
+calendar's free/busy data (read-only - nothing is ever created there), on top
+of the usual checks against our own bookings. A slot busy on either calendar
+is excluded. Leave `GOOGLE_CALENDAR_ID_JAPAN` blank to skip this extra check
+(the calendar just needs to be shared as readable with whichever account
+`GOOGLE_TOKEN_FILE` is authorized as - see Google Meet setup below).
 
 ## Google Meet
 
@@ -127,6 +146,9 @@ Setup:
 5. In `.env`, set `GOOGLE_TOKEN_FILE=token.json` and `GOOGLE_CALENDAR_ID=...`
    (your email, or a secondary calendar's ID from its "Integrate calendar"
    settings - either works, since it's your own calendar now)
+6. Optionally, set `GOOGLE_CALENDAR_ID_JAPAN=...` to a calendar shared as
+   readable with that same account - see "Service picker & the Japan calendar
+   check" above
 
 It also means the client can be added as a real calendar **attendee**
 (`create_event` in `googlecal.py`, with `sendUpdates="all"`) - a plain service

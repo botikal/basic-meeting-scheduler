@@ -5,7 +5,7 @@ from datetime import datetime
 from django.db import IntegrityError, transaction
 
 from . import googlecal
-from .availability import can_book
+from .availability import can_book, extra_busy_for, local_date_of
 from .emails import send_cancellation, send_confirmation
 from .models import Booking
 from .rules import Rules
@@ -36,15 +36,17 @@ def create_booking(
     start_at: datetime,
     note: str = "",
     slot_count: int = 1,
+    service: str = "",
     rules: Rules | None = None,
 ) -> Booking:
     rules = rules or Rules.current()
     slot_count = _clamp_slots(slot_count, rules)
+    extra_busy = extra_busy_for(service, local_date_of(start_at, rules), rules) if service else None
     try:
         # The availability check and the insert run in one transaction so a
         # concurrent booking can't slip into the same slots between them.
         with transaction.atomic():
-            if not can_book(start_at, rules, slot_count):
+            if not can_book(start_at, rules, slot_count, extra_busy=extra_busy):
                 raise SlotUnavailable(_unavailable_message(slot_count, rules))
             booking = Booking.objects.create(
                 client_name=client_name.strip(),
@@ -52,6 +54,7 @@ def create_booking(
                 start_at=start_at,
                 end_at=start_at + slot_count * rules.slot_length,
                 slot_count=slot_count,
+                service=service,
                 note=(note or "").strip(),
             )
     except IntegrityError as exc:  # lost a race for the starting slot
@@ -80,9 +83,14 @@ def reschedule_booking(
         raise SlotUnavailable("Only confirmed bookings can be rescheduled.")
 
     target = _clamp_slots(slot_count if slot_count is not None else booking.slot_count, rules)
+    extra_busy = (
+        extra_busy_for(booking.service, local_date_of(new_start, rules), rules)
+        if booking.service
+        else None
+    )
     try:
         with transaction.atomic():
-            if not can_book(new_start, rules, target, exclude_id=booking.pk):
+            if not can_book(new_start, rules, target, exclude_id=booking.pk, extra_busy=extra_busy):
                 raise SlotUnavailable(_unavailable_message(target, rules))
             booking.start_at = new_start
             booking.end_at = new_start + target * rules.slot_length

@@ -362,3 +362,19 @@ a.cal-day--staff.is-selected {
   .bk { grid-template-columns: 1fr; }
   .bk-actions { flex-direction: row; align-items: center; }
 }
+
+/* ---- Landing (service picker) ------------------------------- */
+.service-list { display: grid; gap: var(--stack-group-gap); }
+.service-card {
+  display: grid;
+  gap: var(--text-gap);
+  padding: var(--card-padding);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-12);
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--text);
+}
+.service-card strong { font-size: 1.05rem; }
+.service-card:hover { border-color: var(--accent); }
+.service-card:hover strong { color: var(--accent); }

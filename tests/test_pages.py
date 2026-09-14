@@ -17,27 +17,60 @@ def _details(**overrides):
     return data
 
 
-def test_index_shows_calendar(client):
+def test_landing_page_lists_the_three_services(client):
     resp = client.get("/")
+    body = resp.content.decode()
+    assert resp.status_code == 200
+    assert "Headhunting" in body
+    assert "Japan services" in body
+    assert "Wanted Global service introduction" in body
+    assert 'href="/schedule/?service=japan"' in body
+
+
+def test_picking_a_service_carries_it_into_the_calendar(client, slot):
+    resp = client.get(
+        "/schedule/",
+        {"service": "japan", "date": slot.date().isoformat(), "start": slot.isoformat()},
+    )
+    body = resp.content.decode()
+    assert resp.status_code == 200
+    assert "Japan services" in body
+    assert 'name="service" value="japan"' in body
+
+
+def test_an_unknown_service_is_dropped(client, slot):
+    resp = client.get(
+        "/schedule/",
+        {
+            "service": "not-a-real-service",
+            "date": slot.date().isoformat(),
+            "start": slot.isoformat(),
+        },
+    )
+    assert 'name="service" value=""' in resp.content.decode()
+
+
+def test_index_shows_calendar(client):
+    resp = client.get("/schedule/")
     assert resp.status_code == 200
     assert 'id="planner"' in resp.content.decode()
 
 
 def test_picking_a_day_shows_slot_times(client, slot):
-    resp = client.get("/", {"date": slot.date().isoformat()})
+    resp = client.get("/schedule/", {"date": slot.date().isoformat()})
     body = resp.content.decode()
     assert resp.status_code == 200
     assert slot.strftime("%H:%M") in body
 
 
 def test_picking_a_slot_shows_the_details_form(client, slot):
-    resp = client.get("/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
+    resp = client.get("/schedule/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
     assert resp.status_code == 200
     assert "Your name" in resp.content.decode()
 
 
 def test_htmx_request_returns_only_the_planner_partial(client):
-    resp = client.get("/", headers={"HX-Request": "true"})
+    resp = client.get("/schedule/", headers={"HX-Request": "true"})
     body = resp.content.decode()
     assert resp.status_code == 200
     assert 'id="planner"' in body
@@ -45,7 +78,7 @@ def test_htmx_request_returns_only_the_planner_partial(client):
 
 
 def test_full_booking_flow(client, slot):
-    resp = client.post("/book/", _details(start=slot.isoformat()))
+    resp = client.post("/schedule/book/", _details(start=slot.isoformat()))
     assert resp.status_code == 302
 
     booking = Booking.objects.get()
@@ -59,29 +92,31 @@ def test_full_booking_flow(client, slot):
 
 
 def test_htmx_booking_redirects_via_header(client, slot):
-    resp = client.post("/book/", _details(start=slot.isoformat()), headers={"HX-Request": "true"})
+    resp = client.post(
+        "/schedule/book/", _details(start=slot.isoformat()), headers={"HX-Request": "true"}
+    )
     assert resp.status_code == 204
     assert resp["HX-Redirect"].startswith("/b/")
 
 
 def test_double_booking_via_page_is_blocked(client, slot):
-    assert client.post("/book/", _details(start=slot.isoformat())).status_code == 302
+    assert client.post("/schedule/book/", _details(start=slot.isoformat())).status_code == 302
 
     resp = client.post(
-        "/book/", _details(start=slot.isoformat(), client_email="second@example.com")
+        "/schedule/book/", _details(start=slot.isoformat(), client_email="second@example.com")
     )
     assert resp.status_code == 200  # re-rendered with an error
     assert Booking.objects.count() == 1
 
 
 def test_missing_details_re_renders_form(client, slot):
-    resp = client.post("/book/", {"start": slot.isoformat(), "client_name": "Only Name"})
+    resp = client.post("/schedule/book/", {"start": slot.isoformat(), "client_name": "Only Name"})
     assert resp.status_code == 200
     assert Booking.objects.count() == 0
 
 
 def test_reschedule_flow(client, slot, other_slot):
-    client.post("/book/", _details(start=slot.isoformat()))
+    client.post("/schedule/book/", _details(start=slot.isoformat()))
     booking = Booking.objects.get()
 
     resp = client.post(f"/b/{booking.manage_token}/reschedule/", {"start": other_slot.isoformat()})
@@ -91,7 +126,7 @@ def test_reschedule_flow(client, slot, other_slot):
 
 
 def test_cancel_flow(client, slot):
-    client.post("/book/", _details(start=slot.isoformat()))
+    client.post("/schedule/book/", _details(start=slot.isoformat()))
     booking = Booking.objects.get()
 
     resp = client.post(f"/b/{booking.manage_token}/cancel/")
@@ -102,27 +137,27 @@ def test_cancel_flow(client, slot):
 
 def test_only_30_minute_meetings_by_default(client, slot):
     """MAX_CONSECUTIVE_SLOTS defaults to 1 - no length choice, no hour booking."""
-    resp = client.get("/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
+    resp = client.get("/schedule/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
     body = resp.content.decode()
     assert "Meeting length" not in body
     assert 'name="slot_count" value="1"' in body
 
-    client.post("/book/", _details(start=slot.isoformat(), slot_count="2"))
+    client.post("/schedule/book/", _details(start=slot.isoformat(), slot_count="2"))
     assert Booking.objects.get().slot_count == 1
 
 
 def test_longer_meetings_when_the_cap_is_raised(client, slot, long_meetings):
-    resp = client.get("/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
+    resp = client.get("/schedule/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
     assert "1 hour" in resp.content.decode()
 
-    client.post("/book/", _details(start=slot.isoformat(), slot_count="2"))
+    client.post("/schedule/book/", _details(start=slot.isoformat(), slot_count="2"))
     booking = Booking.objects.get()
     assert booking.slot_count == 2
     assert booking.duration_minutes == 60
 
 
 def test_hour_booking_blocks_both_slots(client, slot, next_slot, long_meetings):
-    client.post("/book/", _details(start=slot.isoformat(), slot_count="2"))
+    client.post("/schedule/book/", _details(start=slot.isoformat(), slot_count="2"))
 
     open_slots = client.get("/api/slots/", {"day": slot.date().isoformat()}).json()["slots"]
     assert slot.isoformat() not in open_slots
@@ -130,12 +165,12 @@ def test_hour_booking_blocks_both_slots(client, slot, next_slot, long_meetings):
 
 
 def test_slot_count_above_max_is_clamped(client, slot, long_meetings):
-    client.post("/book/", _details(start=slot.isoformat(), slot_count="5"))
+    client.post("/schedule/book/", _details(start=slot.isoformat(), slot_count="5"))
     assert Booking.objects.get().slot_count == 2
 
 
 def test_reschedule_keeps_the_duration(client, slot, other_slot, long_meetings):
-    client.post("/book/", _details(start=slot.isoformat(), slot_count="2"))
+    client.post("/schedule/book/", _details(start=slot.isoformat(), slot_count="2"))
     booking = Booking.objects.get()
 
     resp = client.post(f"/b/{booking.manage_token}/reschedule/", {"start": other_slot.isoformat()})
@@ -144,6 +179,20 @@ def test_reschedule_keeps_the_duration(client, slot, other_slot, long_meetings):
     assert booking.start_at == other_slot
     assert booking.slot_count == 2
     assert booking.duration_minutes == 60
+
+
+def test_booked_service_is_saved_and_shown_on_the_manage_page(client, slot):
+    resp = client.post("/schedule/book/", _details(start=slot.isoformat(), service="headhunting"))
+    booking = Booking.objects.get()
+    assert booking.service == "headhunting"
+
+    manage = client.get(resp.url)
+    assert "Headhunting" in manage.content.decode()
+
+
+def test_an_invalid_service_is_not_saved(client, slot):
+    client.post("/schedule/book/", _details(start=slot.isoformat(), service="bogus"))
+    assert Booking.objects.get().service == ""
 
 
 def test_unknown_token_is_404(client):

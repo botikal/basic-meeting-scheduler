@@ -76,10 +76,18 @@ def _overlaps(start: datetime, end: datetime, intervals: list[Interval]) -> bool
     return any(start < iv_end and end > iv_start for iv_start, iv_end in intervals)
 
 
-def available_slots(day: date, rules: Rules, *, exclude_id: int | None = None) -> list[datetime]:
+def available_slots(
+    day: date,
+    rules: Rules,
+    *,
+    exclude_id: int | None = None,
+    extra_busy: list[Interval] | None = None,
+) -> list[datetime]:
     """Single (30-minute) slot starts on `day` that are free to book, soonest first.
 
     `exclude_id` frees the slots held by one booking - used when rescheduling it.
+    `extra_busy` additionally excludes slots overlapping those intervals - used
+    for services that also check an external calendar (see extra_busy_for).
     """
     slots = generate_day_slots(day, rules)
     if not slots:
@@ -90,11 +98,19 @@ def available_slots(day: date, rules: Rules, *, exclude_id: int | None = None) -
     latest = now + timedelta(days=rules.booking_horizon_days)
     step = rules.slot_length
     intervals = _confirmed_intervals(slots[0], slots[-1] + step, exclude_id=exclude_id)
+    if extra_busy:
+        intervals = [*intervals, *extra_busy]
 
     return [s for s in slots if earliest <= s <= latest and not _overlaps(s, s + step, intervals)]
 
 
-def consecutive_capacity(start: datetime, rules: Rules, *, exclude_id: int | None = None) -> int:
+def consecutive_capacity(
+    start: datetime,
+    rules: Rules,
+    *,
+    exclude_id: int | None = None,
+    extra_busy: list[Interval] | None = None,
+) -> int:
     """How many back-to-back slots can be booked from `start` (0..max).
 
     0 means `start` itself is not a bookable slot.
@@ -107,6 +123,8 @@ def consecutive_capacity(start: datetime, rules: Rules, *, exclude_id: int | Non
     intervals = _confirmed_intervals(
         start, start + rules.max_consecutive_slots * step, exclude_id=exclude_id
     )
+    if extra_busy:
+        intervals = [*intervals, *extra_busy]
 
     count = 0
     cursor = start
@@ -123,12 +141,34 @@ def consecutive_capacity(start: datetime, rules: Rules, *, exclude_id: int | Non
 
 
 def can_book(
-    start: datetime, rules: Rules, slot_count: int, *, exclude_id: int | None = None
+    start: datetime,
+    rules: Rules,
+    slot_count: int,
+    *,
+    exclude_id: int | None = None,
+    extra_busy: list[Interval] | None = None,
 ) -> bool:
     return (
         1 <= slot_count <= rules.max_consecutive_slots
-        and consecutive_capacity(start, rules, exclude_id=exclude_id) >= slot_count
+        and consecutive_capacity(start, rules, exclude_id=exclude_id, extra_busy=extra_busy)
+        >= slot_count
     )
+
+
+def extra_busy_for(service: str, day: date, rules: Rules) -> list[Interval] | None:
+    """Busy periods on the external calendar configured for `service` (if
+    any), covering `day`'s business-hours window. None if there's no such
+    calendar configured, or the lookup failed - see googlecal.busy_intervals.
+    """
+    from . import googlecal  # local import: keeps this module DB-only by default
+
+    calendar_id = googlecal.extra_calendar_for(service)
+    if not calendar_id:
+        return None
+    slots = generate_day_slots(day, rules)
+    if not slots:
+        return None
+    return googlecal.busy_intervals(calendar_id, slots[0], slots[-1] + rules.slot_length)
 
 
 def days_with_availability(days: list[date], rules: Rules) -> dict[date, bool]:

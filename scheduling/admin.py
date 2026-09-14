@@ -12,10 +12,11 @@ class BookingAdmin(admin.ModelAdmin):
         "end_at",
         "client_name",
         "client_email",
+        "service",
         "status",
         "created_at",
     ]
-    list_filter = ["status", "start_at"]
+    list_filter = ["status", "service", "start_at"]
     search_fields = ["client_name", "client_email", "manage_token"]
     readonly_fields = ["manage_token", "created_at", "calendar_event_id", "meet_url"]
     date_hierarchy = "start_at"

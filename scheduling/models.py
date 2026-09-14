@@ -16,6 +16,11 @@ class Booking(models.Model):
         CONFIRMED = "confirmed", "Confirmed"
         CANCELLED = "cancelled", "Cancelled"
 
+    class Service(models.TextChoices):
+        HEADHUNTING = "headhunting", "Headhunting"
+        JAPAN = "japan", "Japan services"
+        GLOBAL = "global", "Wanted Global service introduction"
+
     manage_token = models.CharField(max_length=64, unique=True, default=_new_token, editable=False)
     client_name = models.CharField(max_length=120)
     client_email = models.EmailField()
@@ -23,6 +28,9 @@ class Booking(models.Model):
     end_at = models.DateTimeField()
     # Number of back-to-back slots this booking occupies (1 = a single slot).
     slot_count = models.PositiveSmallIntegerField(default=1)
+    # Which landing-page option the client picked. Blank for bookings made
+    # without going through the landing page (e.g. direct API use).
+    service = models.CharField(max_length=20, choices=Service.choices, blank=True, default="")
     note = models.TextField(blank=True, default="")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.CONFIRMED)
     created_at = models.DateTimeField(auto_now_add=True)

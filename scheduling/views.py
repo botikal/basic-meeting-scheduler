@@ -17,7 +17,7 @@ from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
-from .availability import available_slots, consecutive_capacity, local_date_of
+from .availability import available_slots, consecutive_capacity, extra_busy_for, local_date_of
 from .calendarview import (
     WEEKDAY_LABELS,
     build_month,
@@ -65,6 +65,10 @@ def _clamped_int(raw, low: int, high: int) -> int:
         return low
 
 
+def _valid_service(raw: str | None) -> str:
+    return raw if raw in Booking.Service.values else ""
+
+
 def _slot_label(moment: datetime, rules: Rules) -> str:
     return moment.astimezone(rules.display_tz).strftime("%A %d %B, %H:%M")
 
@@ -86,6 +90,7 @@ def _planner_context(
     nav_url: str,
     selected: date | None,
     start: datetime | None,
+    service: str = "",
     booking: Booking | None = None,
     form: BookingDetailsForm | None = None,
     form_error: str | None = None,
@@ -100,10 +105,18 @@ def _planner_context(
 
     exclude_id = booking.pk if booking else None
     need = booking.slot_count if (mode == "reschedule" and booking) else 1
+    # A reschedule always keeps the booking's own service; a new booking uses
+    # whatever was picked on the landing page.
+    effective_service = booking.service if (mode == "reschedule" and booking) else service
+    extra_busy = (
+        extra_busy_for(effective_service, selected, rules)
+        if effective_service and selected
+        else None
+    )
 
     slots = None
     if selected:
-        free = available_slots(selected, rules, exclude_id=exclude_id)
+        free = available_slots(selected, rules, exclude_id=exclude_id, extra_busy=extra_busy)
         if need > 1:
             free_set = set(free)
             step = rules.slot_length
@@ -121,7 +134,7 @@ def _planner_context(
     slot_count = 1
     can_move = True
     if start:
-        capacity = consecutive_capacity(start, rules, exclude_id=exclude_id)
+        capacity = consecutive_capacity(start, rules, exclude_id=exclude_id, extra_busy=extra_busy)
         if mode == "book":
             top = max(min(capacity, rules.max_consecutive_slots), 1)
             slot_count = _clamped_int(_param(request, "slot_count"), 1, top)
@@ -141,6 +154,7 @@ def _planner_context(
         "mode": mode,
         "action_url": action_url,
         "nav_url": nav_url,
+        "service": service,
         "month": build_month(year, month, rules, selected),
         "weekday_labels": WEEKDAY_LABELS,
         "selected": selected,
@@ -165,9 +179,37 @@ def _render_planner(request, page_template: str, context: dict, *, status: int =
 # --- Booking -------------------------------------------------------------
 
 
+def landing(request):
+    """The service picker shown before the booking calendar."""
+    options = [
+        {
+            "value": Booking.Service.HEADHUNTING,
+            "label": Booking.Service.HEADHUNTING.label,
+            "description": (
+                "Looking to fill a role? Talk to our headhunting team about your hiring needs."
+            ),
+        },
+        {
+            "value": Booking.Service.JAPAN,
+            "label": Booking.Service.JAPAN.label,
+            "description": (
+                "Hiring or exploring opportunities in Japan? Book time with our Japan team."
+            ),
+        },
+        {
+            "value": Booking.Service.GLOBAL,
+            "label": Booking.Service.GLOBAL.label,
+            "description": "New to Wanted? Get an overview of our global services.",
+        },
+    ]
+    context = {"rules": Rules.current(), "options": options}
+    return render(request, "scheduling/landing.html", context)
+
+
 @never_cache
 def index(request):
     rules = Rules.current(display_timezone=client_timezone(request))
+    service = _valid_service(request.GET.get("service"))
     start = _parse_start(request.GET.get("start"))
     selected = _parse_date(request.GET.get("date")) or (
         local_date_of(start, rules) if start else None
@@ -176,11 +218,13 @@ def index(request):
         request,
         rules,
         mode="book",
+        service=service,
         action_url=reverse("scheduling:book"),
         nav_url=reverse("scheduling:index"),
         selected=selected,
         start=start,
     )
+    context["service_label"] = Booking.Service(service).label if service else None
     return _render_planner(request, "scheduling/index.html", context)
 
 
@@ -190,6 +234,7 @@ def book(request):
         return redirect("scheduling:index")
 
     rules = Rules.current(display_timezone=client_timezone(request))
+    service = _valid_service(request.POST.get("service"))
     start = _parse_start(request.POST.get("start"))
     selected = local_date_of(start, rules) if start else None
     form = BookingDetailsForm(request.POST)
@@ -207,6 +252,7 @@ def book(request):
                 slot_count=_clamped_int(
                     request.POST.get("slot_count"), 1, rules.max_consecutive_slots
                 ),
+                service=service,
                 rules=rules,
             )
             return _redirect(request, booking.get_absolute_url())
@@ -217,6 +263,7 @@ def book(request):
         request,
         rules,
         mode="book",
+        service=service,
         action_url=reverse("scheduling:book"),
         nav_url=reverse("scheduling:index"),
         selected=selected,
@@ -224,6 +271,7 @@ def book(request):
         form=form,
         form_error=error,
     )
+    context["service_label"] = Booking.Service(service).label if service else None
     return _render_planner(request, "scheduling/index.html", context)
 
 

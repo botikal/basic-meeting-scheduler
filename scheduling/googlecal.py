@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import logging
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -55,6 +56,51 @@ def _service():
         with open(cfg["TOKEN_FILE"], "w") as f:
             f.write(creds.to_json())
     return build("calendar", "v3", credentials=creds, cache_discovery=False)
+
+
+def extra_calendar_for(service: str) -> str:
+    """The extra read-only calendar to additionally check availability
+    against for a given Booking.Service value, or "" if none is configured.
+
+    This calendar only needs to be *readable* by the same Google account the
+    app is authorized as (e.g. shared with it, or the account is already on
+    it) - we only ever call freebusy on it, never create events there.
+    """
+    return {"japan": settings.GOOGLE_CALENDAR.get("JAPAN_CALENDAR_ID", "")}.get(service, "")
+
+
+def busy_intervals(
+    calendar_id: str, start: datetime, end: datetime
+) -> list[tuple[datetime, datetime]] | None:
+    """Busy periods on `calendar_id` overlapping [start, end).
+
+    Returns None if the lookup isn't configured or the request fails -
+    callers should treat that as "unknown, don't filter on it", not as
+    "everything is free" or "everything is busy".
+    """
+    if not calendar_id:
+        return None
+    service = _service()
+    if not service:
+        return None
+    try:
+        response = (
+            service.freebusy()
+            .query(
+                body={
+                    "timeMin": start.isoformat(),
+                    "timeMax": end.isoformat(),
+                    "items": [{"id": calendar_id}],
+                }
+            )
+            .execute()
+        )
+        busy = response["calendars"][calendar_id].get("busy", [])
+    except Exception:
+        logger.exception("Google Calendar: could not check free/busy for %s", calendar_id)
+        return None
+
+    return [(datetime.fromisoformat(b["start"]), datetime.fromisoformat(b["end"])) for b in busy]
 
 
 def create_event(booking: Booking) -> tuple[str, str] | None:

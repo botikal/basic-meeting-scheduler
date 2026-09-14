@@ -3,6 +3,12 @@
 {% block content %}
   <header class="head">
     <h1>Book a meeting with {{ rules.host_name }}</h1>
+    {% if service_label %}
+      <p class="muted">
+        {{ service_label }}
+        &middot; <a class="link" href="{% url 'scheduling:landing' %}">choose a different service</a>
+      </p>
+    {% endif %}
     <p class="muted">
       {% if rules.offers_longer_meetings %}
         {{ rules.slot_minutes }}&ndash;{{ rules.max_minutes }} minute meetings

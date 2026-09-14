@@ -7,13 +7,13 @@ Every link is a real URL so the flow also works with JavaScript disabled.
 
   <div class="cal">
     <div class="cal-head">
-      <a class="cal-nav" href="{{ nav_url }}?month={{ month.prev_month }}"
-         hx-get="{{ nav_url }}?month={{ month.prev_month }}"
+      <a class="cal-nav" href="{{ nav_url }}?month={{ month.prev_month }}{% if service %}&service={{ service|urlencode }}{% endif %}"
+         hx-get="{{ nav_url }}?month={{ month.prev_month }}{% if service %}&service={{ service|urlencode }}{% endif %}"
          hx-target="#planner" hx-swap="outerHTML" hx-push-url="true"
          aria-label="Previous month">&larr;</a>
       <strong>{{ month.label }}</strong>
-      <a class="cal-nav" href="{{ nav_url }}?month={{ month.next_month }}"
-         hx-get="{{ nav_url }}?month={{ month.next_month }}"
+      <a class="cal-nav" href="{{ nav_url }}?month={{ month.next_month }}{% if service %}&service={{ service|urlencode }}{% endif %}"
+         hx-get="{{ nav_url }}?month={{ month.next_month }}{% if service %}&service={{ service|urlencode }}{% endif %}"
          hx-target="#planner" hx-swap="outerHTML" hx-push-url="true"
          aria-label="Next month">&rarr;</a>
     </div>
@@ -23,8 +23,8 @@ Every link is a real URL so the flow also works with JavaScript disabled.
       {% for week in month.weeks %}{% for day in week %}
         {% if day.is_available %}
           <a class="cal-day{% if day.date == selected %} is-selected{% endif %}{% if not day.in_month %} is-dim{% endif %}"
-             href="{{ nav_url }}?month={{ month.ym }}&date={{ day.date|date:'Y-m-d' }}"
-             hx-get="{{ nav_url }}?month={{ month.ym }}&date={{ day.date|date:'Y-m-d' }}"
+             href="{{ nav_url }}?month={{ month.ym }}&date={{ day.date|date:'Y-m-d' }}{% if service %}&service={{ service|urlencode }}{% endif %}"
+             hx-get="{{ nav_url }}?month={{ month.ym }}&date={{ day.date|date:'Y-m-d' }}{% if service %}&service={{ service|urlencode }}{% endif %}"
              hx-target="#planner" hx-swap="outerHTML" hx-push-url="true">{{ day.date.day }}</a>
         {% else %}
           <span class="cal-day is-off{% if not day.in_month %} is-dim{% endif %}{% if day.is_today %} is-today{% endif %}">{{ day.date.day }}</span>
@@ -40,8 +40,8 @@ Every link is a real URL so the flow also works with JavaScript disabled.
         <div class="slot-grid">
           {% for slot in slots %}
             <a class="slot{% if slot.selected %} is-selected{% endif %}"
-               href="{{ nav_url }}?month={{ month.ym }}&date={{ selected|date:'Y-m-d' }}&start={{ slot.iso|urlencode }}"
-               hx-get="{{ nav_url }}?month={{ month.ym }}&date={{ selected|date:'Y-m-d' }}&start={{ slot.iso|urlencode }}"
+               href="{{ nav_url }}?month={{ month.ym }}&date={{ selected|date:'Y-m-d' }}&start={{ slot.iso|urlencode }}{% if service %}&service={{ service|urlencode }}{% endif %}"
+               hx-get="{{ nav_url }}?month={{ month.ym }}&date={{ selected|date:'Y-m-d' }}&start={{ slot.iso|urlencode }}{% if service %}&service={{ service|urlencode }}{% endif %}"
                hx-target="#planner" hx-swap="outerHTML" hx-push-url="true">{{ slot.label }}</a>
           {% endfor %}
         </div>
@@ -59,6 +59,7 @@ Every link is a real URL so the flow also works with JavaScript disabled.
           {% csrf_token %}
           <input type="hidden" name="start" value="{{ start.isoformat }}">
           <input type="hidden" name="month" value="{{ month.ym }}">
+          <input type="hidden" name="service" value="{{ service }}">
           <p class="chosen">Selected time: <strong>{{ start_label }}</strong></p>
           {% if form_error %}<p class="ferror">{{ form_error }}</p>{% endif %}
 

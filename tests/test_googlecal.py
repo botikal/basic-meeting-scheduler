@@ -8,10 +8,16 @@ from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
+from django.utils import timezone
 
 from scheduling import googlecal
 from scheduling.models import Booking
-from scheduling.services import cancel_booking, create_booking, reschedule_booking
+from scheduling.services import (
+    SlotUnavailable,
+    cancel_booking,
+    create_booking,
+    reschedule_booking,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -125,3 +131,111 @@ def test_delete_event_notifies_the_attendee(slot, settings):
 
     _, kwargs = fake_service.events.return_value.delete.call_args
     assert kwargs["sendUpdates"] == "all"
+
+
+# --- The extra Japan-calendar availability check ---------------------------
+
+
+def test_extra_calendar_for_japan_reads_the_configured_calendar_id(settings):
+    settings.GOOGLE_CALENDAR = {
+        "TOKEN_FILE": "unused.json",
+        "CALENDAR_ID": "cal@example.com",
+        "JAPAN_CALENDAR_ID": "japan@example.com",
+    }
+    assert googlecal.extra_calendar_for("japan") == "japan@example.com"
+
+
+def test_extra_calendar_for_other_services_is_blank(settings):
+    settings.GOOGLE_CALENDAR = {
+        "TOKEN_FILE": "unused.json",
+        "CALENDAR_ID": "cal@example.com",
+        "JAPAN_CALENDAR_ID": "japan@example.com",
+    }
+    assert googlecal.extra_calendar_for("headhunting") == ""
+    assert googlecal.extra_calendar_for("") == ""
+
+
+def test_extra_calendar_for_japan_is_blank_when_unconfigured(settings):
+    settings.GOOGLE_CALENDAR = {"TOKEN_FILE": "unused.json", "CALENDAR_ID": "cal@example.com"}
+    assert googlecal.extra_calendar_for("japan") == ""
+
+
+def test_busy_intervals_returns_none_without_a_calendar_id():
+    assert googlecal.busy_intervals("", timezone.now(), timezone.now()) is None
+
+
+def test_busy_intervals_returns_none_when_google_calendar_is_off():
+    # _no_google_calendar leaves TOKEN_FILE/CALENDAR_ID blank, so _service() is None.
+    assert googlecal.busy_intervals("japan@example.com", timezone.now(), timezone.now()) is None
+
+
+def test_busy_intervals_parses_the_freebusy_response(slot):
+    fake_service = MagicMock()
+    fake_service.freebusy.return_value.query.return_value.execute.return_value = {
+        "calendars": {
+            "japan@example.com": {
+                "busy": [
+                    {
+                        "start": slot.isoformat(),
+                        "end": (slot + timedelta(minutes=30)).isoformat(),
+                    }
+                ]
+            }
+        }
+    }
+    with patch("scheduling.googlecal._service", return_value=fake_service):
+        result = googlecal.busy_intervals("japan@example.com", slot, slot + timedelta(hours=1))
+    assert result == [(slot, slot + timedelta(minutes=30))]
+
+
+def test_busy_intervals_returns_none_when_the_api_call_fails():
+    fake_service = MagicMock()
+    fake_service.freebusy.return_value.query.return_value.execute.side_effect = Exception("boom")
+    with patch("scheduling.googlecal._service", return_value=fake_service):
+        assert googlecal.busy_intervals("japan@example.com", timezone.now(), timezone.now()) is None
+
+
+def test_japan_slot_busy_on_the_external_calendar_is_not_offered(client, slot, settings):
+    settings.GOOGLE_CALENDAR = {
+        "TOKEN_FILE": "unused.json",
+        "CALENDAR_ID": "cal@example.com",
+        "JAPAN_CALENDAR_ID": "japan@example.com",
+    }
+    with patch(
+        "scheduling.googlecal.busy_intervals",
+        return_value=[(slot, slot + timedelta(minutes=30))],
+    ):
+        resp = client.get("/schedule/", {"service": "japan", "date": slot.date().isoformat()})
+    assert slot.strftime("%H:%M") not in resp.content.decode()
+
+
+def test_japan_booking_on_an_externally_busy_slot_is_rejected(slot, settings):
+    settings.GOOGLE_CALENDAR = {
+        "TOKEN_FILE": "unused.json",
+        "CALENDAR_ID": "cal@example.com",
+        "JAPAN_CALENDAR_ID": "japan@example.com",
+    }
+    with (
+        patch(
+            "scheduling.googlecal.busy_intervals",
+            return_value=[(slot, slot + timedelta(minutes=30))],
+        ),
+        pytest.raises(SlotUnavailable),
+    ):
+        _booking(slot, service="japan")
+    assert Booking.objects.count() == 0
+
+
+def test_headhunting_is_unaffected_by_the_japan_calendar(slot, settings):
+    """The extra calendar check is only wired up for the Japan service."""
+    settings.GOOGLE_CALENDAR = {
+        "TOKEN_FILE": "unused.json",
+        "CALENDAR_ID": "cal@example.com",
+        "JAPAN_CALENDAR_ID": "japan@example.com",
+    }
+    with patch(
+        "scheduling.googlecal.busy_intervals",
+        return_value=[(slot, slot + timedelta(minutes=30))],
+    ):
+        booking = _booking(slot, service="headhunting")
+    assert booking.service == "headhunting"

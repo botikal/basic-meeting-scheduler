@@ -17,6 +17,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "start_at",
             "end_at",
             "slot_count",
+            "service",
             "note",
             "status",
             "manage_token",
@@ -34,6 +35,9 @@ class BookingCreateSerializer(serializers.Serializer):
     client_email = serializers.EmailField()
     start_at = serializers.DateTimeField()
     slot_count = serializers.IntegerField(required=False, default=1, min_value=1)
+    service = serializers.ChoiceField(
+        choices=Booking.Service.choices, required=False, allow_blank=True, default=""
+    )
     note = serializers.CharField(required=False, allow_blank=True, default="", max_length=1000)
 
 

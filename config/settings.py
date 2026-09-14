@@ -151,6 +151,10 @@ SCHEDULER = {
 GOOGLE_CALENDAR = {
     "TOKEN_FILE": env("GOOGLE_TOKEN_FILE", default=""),
     "CALENDAR_ID": env("GOOGLE_CALENDAR_ID", default=""),
+    # Japan-services bookings additionally check this calendar's free/busy
+    # (read-only) before offering a slot, on top of the usual availability
+    # checks. Leave blank to skip that extra check.
+    "JAPAN_CALENDAR_ID": env("GOOGLE_CALENDAR_ID_JAPAN", default=""),
 }
 
 REST_FRAMEWORK = {
