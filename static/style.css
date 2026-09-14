@@ -15,8 +15,44 @@
   --ok-text: #1c5a33;
   --err-bg: #fde7e6;
   --err-text: #8f2b26;
-  --radius: 12px;
   --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 8px 24px rgba(0, 0, 0, .06);
+
+  /* ---- Layout tokens ---------------------------------------------
+     A spacing/radius scale with semantic names (Component Gap = between
+     equal sibling components, Foreground Gap = between elements *inside*
+     one component, Stack/Inline Group Gap = between larger blocks, Gutter /
+     Card Padding = container padding). Pick by intent, not by pixel value -
+     two 8px gaps with different jobs still get different tokens. Raw
+     Spacing/* values are only a fallback for one-off, non-semantic spots. */
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+
+  --gutter: 20px;
+  --card-padding: 24px;
+
+  --component-gap-xs: 8px;
+  --component-gap-sm: 12px;
+  --component-gap-md: 16px;
+  --component-gap-lg: 20px;
+
+  --inline-group-gap: 20px;
+  --stack-group-gap: 24px;
+
+  --fg-gap-sm: 6px;
+  --fg-gap-md: 8px;
+  --fg-gap-lg: 12px;
+  --fg-gap-xl: 16px;
+  --text-gap: 6px;
+
+  --content-margin-top-sm: 20px;
+  --content-margin-bottom: 12px;
+  --section-header-margin-bottom-md: 20px;
+
+  --radius-8: 8px;    /* chips, small buttons */
+  --radius-10: 10px;  /* general buttons */
+  --radius-12: 12px;  /* cards, inputs */
+  --radius-16: 16px;  /* big cards, modals */
+  --radius-full: 9999px; /* pills, dots, avatars */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -44,7 +80,7 @@
 
 body {
   margin: 0;
-  padding: 2.5rem 1rem 1rem;
+  padding: 2.5rem var(--gutter) var(--gutter);
   font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--text);
   background: var(--bg);
@@ -59,18 +95,18 @@ body {
   max-width: 560px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-16);
   box-shadow: var(--shadow);
-  padding: 1.75rem 1.75rem 2rem;
+  padding: var(--card-padding);
 }
 
 .foot {
-  margin: 1.25rem 0;
+  margin: var(--component-gap-lg) 0;
   font-size: .8rem;
   color: var(--muted);
 }
 
-.head { margin-bottom: 1.25rem; }
+.head { margin-bottom: var(--section-header-margin-bottom-md); }
 h1 { font-size: 1.35rem; margin: 0 0 .25rem; }
 h2 { font-size: 1.05rem; margin: 0 0 .75rem; }
 h3 { font-size: .9rem; margin: 0 0 .6rem; color: var(--muted); font-weight: 600; }
@@ -85,19 +121,25 @@ p { margin: .5rem 0; }
 .link:hover { text-decoration: underline; }
 
 /* ---- Flash messages --------------------------------------------- */
-.messages { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .5rem; }
-.msg { padding: .6rem .85rem; border-radius: 8px; font-size: .9rem; }
+.messages {
+  list-style: none;
+  margin: 0 0 var(--component-gap-md);
+  padding: 0;
+  display: grid;
+  gap: var(--component-gap-xs);
+}
+.msg { padding: .6rem .85rem; border-radius: var(--radius-8); font-size: .9rem; }
 .msg--success { background: var(--ok-bg); color: var(--ok-text); }
 .msg--error { background: var(--err-bg); color: var(--err-text); }
 
 /* ---- Calendar --------------------------------------------------- */
-.planner { display: grid; gap: 1.5rem; }
+.planner { display: grid; gap: var(--stack-group-gap); }
 
 .cal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: .75rem;
+  margin-bottom: var(--component-gap-sm);
   font-size: 1rem;
 }
 .cal-nav {
@@ -105,7 +147,7 @@ p { margin: .5rem 0; }
   place-items: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 8px;
+  border-radius: var(--radius-8);
   color: var(--text);
   text-decoration: none;
   border: 1px solid var(--border);
@@ -115,7 +157,7 @@ p { margin: .5rem 0; }
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: var(--spacing-4);
 }
 .cal-dow {
   text-align: center;
@@ -132,7 +174,7 @@ p { margin: .5rem 0; }
   aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
-  border-radius: 8px;
+  border-radius: var(--radius-8);
   font-size: .9rem;
   text-decoration: none;
   color: var(--text);
@@ -168,7 +210,7 @@ a.cal-day--staff.is-selected {
   transform: translateX(-50%);
   width: 5px;
   height: 5px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--accent);
 }
 .cal-day--staff.is-selected .cal-dot { display: none; }
@@ -177,13 +219,13 @@ a.cal-day--staff.is-selected {
 .slot-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: .5rem;
+  gap: var(--component-gap-xs);
 }
 .slot {
   padding: .55rem .25rem;
   text-align: center;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-8);
   text-decoration: none;
   color: var(--text);
   font-variant-numeric: tabular-nums;
@@ -196,7 +238,7 @@ a.cal-day--staff.is-selected {
 .panel {
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-12);
   padding: 1.1rem 1.25rem 1.35rem;
 }
 .chosen { margin-top: 0; }
@@ -204,26 +246,26 @@ a.cal-day--staff.is-selected {
 .lengths {
   border: 0;
   padding: 0;
-  margin: 0 0 1rem;
+  margin: 0 0 var(--component-gap-md);
   display: flex;
-  gap: .5rem;
+  gap: var(--component-gap-xs);
   flex-wrap: wrap;
 }
 .lengths legend { font-size: .85rem; color: var(--muted); margin-bottom: .4rem; }
 .len {
   display: inline-flex;
   align-items: center;
-  gap: .4rem;
+  gap: var(--fg-gap-sm);
   padding: .45rem .8rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-8);
   background: var(--surface);
   cursor: pointer;
 }
 .len.is-selected { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .len input { accent-color: var(--accent); }
 
-.field { display: grid; gap: .3rem; margin: .85rem 0; }
+.field { display: grid; gap: var(--text-gap); margin: var(--component-gap-sm) 0; }
 .field > span { font-size: .85rem; color: var(--muted); }
 .field input,
 .field textarea {
@@ -233,7 +275,7 @@ a.cal-day--staff.is-selected {
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-12);
 }
 .field input:focus,
 .field textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
@@ -244,7 +286,7 @@ a.cal-day--staff.is-selected {
 .btn {
   appearance: none;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-10);
   padding: .65rem 1.3rem;
   font: inherit;
   font-weight: 600;
@@ -265,19 +307,23 @@ a.cal-day--staff.is-selected {
 .details {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: .4rem 1.1rem;
-  margin: 0 0 1.5rem;
+  gap: var(--text-gap) var(--fg-gap-xl);
+  margin: 0 0 var(--stack-group-gap);
   font-size: .95rem;
 }
 .details dt { color: var(--muted); }
 .details dd { margin: 0; }
 
-.block { border-top: 1px solid var(--border); padding-top: 1.25rem; margin-top: 1.5rem; }
+.block {
+  border-top: 1px solid var(--border);
+  padding-top: var(--component-gap-lg);
+  margin-top: var(--stack-group-gap);
+}
 
 .pill {
   display: inline-block;
   padding: .15rem .6rem;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: .8rem;
   font-weight: 600;
 }
@@ -295,10 +341,10 @@ a.cal-day--staff.is-selected {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--component-gap-md);
 }
 
-.day { margin-top: 1.5rem; margin-bottom: .5rem; }
+.day { margin-top: var(--stack-group-gap); margin-bottom: var(--component-gap-xs); }
 .day h2 {
   font-size: .8rem;
   text-transform: uppercase;
@@ -312,7 +358,7 @@ a.cal-day--staff.is-selected {
 .bk {
   display: grid;
   grid-template-columns: 5.5rem 1fr auto;
-  gap: .25rem 1rem;
+  gap: var(--spacing-4) var(--fg-gap-xl);
   align-items: start;
   padding: .7rem 0;
   border-bottom: 1px solid var(--border);
@@ -324,7 +370,7 @@ a.cal-day--staff.is-selected {
 .bk-who { display: grid; gap: .15rem; }
 .bk-mail { font-size: .9rem; }
 .bk-note { margin: .3rem 0 0; font-size: .9rem; color: var(--muted); }
-.bk-actions { display: flex; flex-direction: column; align-items: end; gap: .4rem; }
+.bk-actions { display: flex; flex-direction: column; align-items: end; gap: var(--fg-gap-sm); }
 
 @media (max-width: 460px) {
   .bk { grid-template-columns: 1fr; }
