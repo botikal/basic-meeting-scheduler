@@ -156,19 +156,35 @@ def can_book(
 
 
 def extra_busy_for(service: str, day: date, rules: Rules) -> list[Interval] | None:
-    """Busy periods on the external calendar configured for `service` (if
-    any), covering `day`'s business-hours window. None if there's no such
-    calendar configured, or the lookup failed - see googlecal.busy_intervals.
+    """Busy periods on external Google Calendars that should also block
+    availability on `day`, beyond our own confirmed bookings.
+
+    Always includes the main calendar bookings are created on (see
+    googlecal.main_calendar_id), plus - for a service with one configured,
+    currently just "japan" - a service-specific calendar (see
+    googlecal.extra_calendar_for). None only if no calendar could be checked
+    at all: nothing configured, or every lookup failed - see
+    googlecal.busy_intervals.
     """
     from . import googlecal  # local import: keeps this module DB-only by default
 
-    calendar_id = googlecal.extra_calendar_for(service)
-    if not calendar_id:
+    candidates = (googlecal.main_calendar_id(), googlecal.extra_calendar_for(service))
+    calendar_ids = list(dict.fromkeys(cid for cid in candidates if cid))
+    if not calendar_ids:
         return None
     slots = generate_day_slots(day, rules)
     if not slots:
         return None
-    return googlecal.busy_intervals(calendar_id, slots[0], slots[-1] + rules.slot_length)
+    start, end = slots[0], slots[-1] + rules.slot_length
+
+    busy: list[Interval] = []
+    found_any = False
+    for calendar_id in calendar_ids:
+        result = googlecal.busy_intervals(calendar_id, start, end)
+        if result is not None:
+            found_any = True
+            busy.extend(result)
+    return busy if found_any else None
 
 
 def days_with_availability(days: list[date], rules: Rules) -> dict[date, bool]:

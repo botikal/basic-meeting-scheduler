@@ -58,6 +58,15 @@ def _service():
     return build("calendar", "v3", credentials=creds, cache_discovery=False)
 
 
+def main_calendar_id() -> str:
+    """The calendar bookings are created on - "" if Google Calendar isn't
+    configured. Its existing events are also checked as busy time for every
+    booking (see availability.extra_busy_for), so a client can't book over
+    something already on it.
+    """
+    return settings.GOOGLE_CALENDAR.get("CALENDAR_ID", "")
+
+
 def extra_calendar_for(service: str) -> str:
     """The extra read-only calendar to additionally check availability
     against for a given Booking.Service value, or "" if none is configured.

@@ -108,11 +108,7 @@ def _planner_context(
     # A reschedule always keeps the booking's own service; a new booking uses
     # whatever was picked on the landing page.
     effective_service = booking.service if (mode == "reschedule" and booking) else service
-    extra_busy = (
-        extra_busy_for(effective_service, selected, rules)
-        if effective_service and selected
-        else None
-    )
+    extra_busy = extra_busy_for(effective_service, selected, rules) if selected else None
 
     slots = None
     if selected:

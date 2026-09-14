@@ -104,7 +104,7 @@ above 1 lets a client book several back-to-back slots as one meeting - a
 option only when the following slots are free. `Booking.slot_count` records how
 many slots a booking holds; `end_at` is derived from it.
 
-## Service picker & the Japan calendar check
+## Service picker & external-calendar availability checks
 
 Before reaching the booking calendar, a client picks one of three services on
 the landing page (`Booking.Service`: `headhunting`, `japan`, `global`). The
@@ -113,13 +113,22 @@ form field and saved on the booking (`Booking.service`) - it's purely
 informational for Headhunting and Wanted Global, shown on the manage page and
 staff calendar, and all three still book onto the same shared calendar.
 
-Japan services is the exception: if `GOOGLE_CALENDAR_ID_JAPAN` is set in
-`.env`, availability for a Japan booking is *also* checked against that
-calendar's free/busy data (read-only - nothing is ever created there), on top
-of the usual checks against our own bookings. A slot busy on either calendar
-is excluded. Leave `GOOGLE_CALENDAR_ID_JAPAN` blank to skip this extra check
-(the calendar just needs to be shared as readable with whichever account
-`GOOGLE_TOKEN_FILE` is authorized as - see Google Meet setup below).
+Availability isn't just our own bookings, if Google Calendar is configured:
+
+- **`GOOGLE_CALENDAR_ID`'s own events also count as busy, for every booking**
+  (not just ones made through this app) - so a client can't book over
+  something already on that calendar. This needs read access, which the OAuth
+  setup below already grants (it's the same calendar bookings are created on).
+- **Japan services additionally check `GOOGLE_CALENDAR_ID_JAPAN`** (if set) -
+  its free/busy is checked only for Japan bookings, on top of the main
+  calendar check above. Leave it blank to skip; the calendar just needs to be
+  *shared as readable* with whichever account `GOOGLE_TOKEN_FILE` is
+  authorized as (see Google Meet setup below) - it's never written to.
+
+A slot busy on any calendar that applies to it is excluded (`availability.
+extra_busy_for`, `googlecal.busy_intervals`/`main_calendar_id`/
+`extra_calendar_for`). If Google Calendar isn't configured at all, this is
+skipped entirely and only our own bookings are checked, same as before.
 
 ## Google Meet
 
@@ -147,8 +156,8 @@ Setup:
    (your email, or a secondary calendar's ID from its "Integrate calendar"
    settings - either works, since it's your own calendar now)
 6. Optionally, set `GOOGLE_CALENDAR_ID_JAPAN=...` to a calendar shared as
-   readable with that same account - see "Service picker & the Japan calendar
-   check" above
+   readable with that same account - see "Service picker & external-calendar
+   availability checks" above
 
 It also means the client can be added as a real calendar **attendee**
 (`create_event` in `googlecal.py`, with `sendUpdates="all"`) - a plain service

@@ -196,9 +196,9 @@ def test_busy_intervals_returns_none_when_the_api_call_fails():
 
 
 def test_japan_slot_busy_on_the_external_calendar_is_not_offered(client, slot, settings):
+    # CALENDAR_ID left blank so only the Japan-specific calendar is in play.
     settings.GOOGLE_CALENDAR = {
         "TOKEN_FILE": "unused.json",
-        "CALENDAR_ID": "cal@example.com",
         "JAPAN_CALENDAR_ID": "japan@example.com",
     }
     with patch(
@@ -212,7 +212,6 @@ def test_japan_slot_busy_on_the_external_calendar_is_not_offered(client, slot, s
 def test_japan_booking_on_an_externally_busy_slot_is_rejected(slot, settings):
     settings.GOOGLE_CALENDAR = {
         "TOKEN_FILE": "unused.json",
-        "CALENDAR_ID": "cal@example.com",
         "JAPAN_CALENDAR_ID": "japan@example.com",
     }
     with (
@@ -226,16 +225,43 @@ def test_japan_booking_on_an_externally_busy_slot_is_rejected(slot, settings):
     assert Booking.objects.count() == 0
 
 
-def test_headhunting_is_unaffected_by_the_japan_calendar(slot, settings):
-    """The extra calendar check is only wired up for the Japan service."""
+# --- The main calendar's own events also block availability, for every
+# service - not just Japan's extra check. -----------------------------------
+
+
+def test_main_calendar_busy_time_blocks_any_booking(slot, settings):
+    settings.GOOGLE_CALENDAR = {"TOKEN_FILE": "unused.json", "CALENDAR_ID": "cal@example.com"}
+    with (
+        patch(
+            "scheduling.googlecal.busy_intervals",
+            return_value=[(slot, slot + timedelta(minutes=30))],
+        ),
+        pytest.raises(SlotUnavailable),
+    ):
+        _booking(slot)  # no service picked - still checked
+    assert Booking.objects.count() == 0
+
+
+def test_japan_calendar_only_blocks_japan_bookings(slot, other_slot, settings):
+    """A busy Japan calendar doesn't affect other services, and a free main
+    calendar doesn't shield a Japan booking from a busy Japan calendar."""
     settings.GOOGLE_CALENDAR = {
         "TOKEN_FILE": "unused.json",
         "CALENDAR_ID": "cal@example.com",
         "JAPAN_CALENDAR_ID": "japan@example.com",
     }
-    with patch(
-        "scheduling.googlecal.busy_intervals",
-        return_value=[(slot, slot + timedelta(minutes=30))],
-    ):
-        booking = _booking(slot, service="headhunting")
-    assert booking.service == "headhunting"
+
+    def fake_busy(calendar_id, start, end):
+        if calendar_id != "japan@example.com":
+            return []
+        return [
+            (slot, slot + timedelta(minutes=30)),
+            (other_slot, other_slot + timedelta(minutes=30)),
+        ]
+
+    with patch("scheduling.googlecal.busy_intervals", side_effect=fake_busy):
+        headhunting = _booking(slot, service="headhunting")
+        assert headhunting.service == "headhunting"
+        with pytest.raises(SlotUnavailable):
+            _booking(other_slot, service="japan")
+    assert Booking.objects.count() == 1

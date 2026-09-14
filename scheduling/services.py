@@ -41,7 +41,7 @@ def create_booking(
 ) -> Booking:
     rules = rules or Rules.current()
     slot_count = _clamp_slots(slot_count, rules)
-    extra_busy = extra_busy_for(service, local_date_of(start_at, rules), rules) if service else None
+    extra_busy = extra_busy_for(service, local_date_of(start_at, rules), rules)
     try:
         # The availability check and the insert run in one transaction so a
         # concurrent booking can't slip into the same slots between them.
@@ -83,11 +83,7 @@ def reschedule_booking(
         raise SlotUnavailable("Only confirmed bookings can be rescheduled.")
 
     target = _clamp_slots(slot_count if slot_count is not None else booking.slot_count, rules)
-    extra_busy = (
-        extra_busy_for(booking.service, local_date_of(new_start, rules), rules)
-        if booking.service
-        else None
-    )
+    extra_busy = extra_busy_for(booking.service, local_date_of(new_start, rules), rules)
     try:
         with transaction.atomic():
             if not can_book(new_start, rules, target, exclude_id=booking.pk, extra_busy=extra_busy):
