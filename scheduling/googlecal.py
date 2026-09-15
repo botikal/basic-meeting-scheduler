@@ -83,6 +83,23 @@ def extra_calendar_for(service: str) -> str:
     return {"japan": settings.GOOGLE_CALENDAR.get("JAPAN_CALENDAR_ID", "")}.get(service, "")
 
 
+def write_calendar_for(service: str) -> str:
+    """The calendar a booking's event is actually created on - can differ
+    from what's read for availability (main_calendar_id / extra_calendar_for),
+    e.g. reading a staff member's real calendar for conflicts while writing
+    client invites to a separate, dedicated bookings calendar.
+
+    Falls back to the main read calendar if no write calendar is configured,
+    so setting only CALENDAR_ID (the common case) still works as one calendar
+    for both reading and writing.
+    """
+    cfg = settings.GOOGLE_CALENDAR
+    main_write = cfg.get("WRITE_CALENDAR_ID") or cfg.get("CALENDAR_ID", "")
+    if service == "japan":
+        return cfg.get("JAPAN_WRITE_CALENDAR_ID") or main_write
+    return main_write
+
+
 def busy_intervals(
     calendar_id: str, start: datetime, end: datetime
 ) -> list[tuple[datetime, datetime]] | None:
@@ -145,7 +162,7 @@ def create_event(booking: Booking) -> tuple[str, str] | None:
         event = (
             service.events()
             .insert(
-                calendarId=cfg["CALENDAR_ID"],
+                calendarId=write_calendar_for(booking.service),
                 conferenceDataVersion=1,
                 sendUpdates="all",  # email the invite to the attendee below
                 body={
@@ -183,7 +200,7 @@ def update_event(booking: Booking) -> None:
     try:
         service = _service()
         service.events().patch(
-            calendarId=cfg["CALENDAR_ID"],
+            calendarId=write_calendar_for(booking.service),
             eventId=booking.calendar_event_id,
             sendUpdates="all",  # let the client know the time changed
             body={
@@ -205,7 +222,7 @@ def delete_event(booking: Booking) -> None:
     try:
         service = _service()
         service.events().delete(
-            calendarId=cfg["CALENDAR_ID"],
+            calendarId=write_calendar_for(booking.service),
             eventId=booking.calendar_event_id,
             sendUpdates="all",  # let the client know it's cancelled
         ).execute()

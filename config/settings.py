@@ -158,10 +158,18 @@ GOOGLE_CALENDAR = {
     # as busy for every service, so a client can't book over something
     # already on it (see googlecal.main_calendar_id).
     "CALENDAR_ID": env("GOOGLE_CALENDAR_ID", default=""),
+    # Optional: if the calendar bookings are created on should differ from
+    # the one above (e.g. reading a staff member's real calendar for
+    # conflicts, but writing client invites to a separate bookings
+    # calendar). Blank means read and write are the same calendar.
+    "WRITE_CALENDAR_ID": env("GOOGLE_CALENDAR_WRITE_ID", default=""),
     # Japan-services bookings additionally check this calendar's free/busy
     # (read-only) before offering a slot, on top of the usual availability
     # checks. Leave blank to skip that extra check.
     "JAPAN_CALENDAR_ID": env("GOOGLE_CALENDAR_ID_JAPAN", default=""),
+    # Optional: where Japan-services bookings are created, if different from
+    # WRITE_CALENDAR_ID/CALENDAR_ID above. Blank falls back to those.
+    "JAPAN_WRITE_CALENDAR_ID": env("GOOGLE_CALENDAR_ID_JAPAN_WRITE", default=""),
 }
 
 REST_FRAMEWORK = {

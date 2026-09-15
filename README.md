@@ -108,31 +108,47 @@ above 1 lets a client book several back-to-back slots as one meeting - a
 option only when the following slots are free. `Booking.slot_count` records how
 many slots a booking holds; `end_at` is derived from it.
 
-## Service picker & external-calendar availability checks
+## Service picker & per-service calendars
 
 Before reaching the booking calendar, a client picks one of three services on
 the landing page (`Booking.Service`: `headhunting`, `japan`, `global`). The
 choice is carried through the calendar as a `?service=` query param / hidden
 form field and saved on the booking (`Booking.service`) - it's purely
-informational for Headhunting and Wanted Global, shown on the manage page and
-staff calendar, and all three still book onto the same shared calendar.
+informational for Headhunting and Wanted Global (they share one calendar),
+while Japan can be pointed at entirely different calendars, both explained
+below.
 
-Availability isn't just our own bookings, if Google Calendar is configured:
+**Reading (availability):** a slot busy on our own bookings is always
+excluded; if Google Calendar is configured, two more checks layer on top:
 
-- **`GOOGLE_CALENDAR_ID`'s own events also count as busy, for every booking**
+- **`GOOGLE_CALENDAR_ID`'s own events count as busy, for every booking**
   (not just ones made through this app) - so a client can't book over
-  something already on that calendar. This needs read access, which the OAuth
-  setup below already grants (it's the same calendar bookings are created on).
+  something already on that calendar.
 - **Japan services additionally check `GOOGLE_CALENDAR_ID_JAPAN`** (if set) -
   its free/busy is checked only for Japan bookings, on top of the main
-  calendar check above. Leave it blank to skip; the calendar just needs to be
-  *shared as readable* with whichever account `GOOGLE_TOKEN_FILE` is
-  authorized as (see Google Meet setup below) - it's never written to.
+  calendar check above. Leave it blank to skip; this calendar only needs to
+  be *shared as readable* with whichever account `GOOGLE_TOKEN_FILE` is
+  authorized as - it's never written to.
 
 A slot busy on any calendar that applies to it is excluded (`availability.
 extra_busy_for`, `googlecal.busy_intervals`/`main_calendar_id`/
 `extra_calendar_for`). If Google Calendar isn't configured at all, this is
 skipped entirely and only our own bookings are checked, same as before.
+
+**Writing (where a confirmed booking's event actually gets created):**
+defaults to `GOOGLE_CALENDAR_ID`, but can be split off with two more optional
+settings - useful when the calendar you want read for conflicts (e.g. a
+real staff member's own calendar) shouldn't also collect client invites:
+
+- `GOOGLE_CALENDAR_WRITE_ID` - if set, headhunting/global bookings are
+  created here instead of `GOOGLE_CALENDAR_ID`.
+- `GOOGLE_CALENDAR_ID_JAPAN_WRITE` - if set, Japan bookings are created here
+  instead. Falls back to `GOOGLE_CALENDAR_WRITE_ID`/`GOOGLE_CALENDAR_ID` if
+  unset, matching the old one-calendar-for-everything behavior.
+
+Whichever calendar ends up as a write target needs to be shared with
+**"Make changes to events"** access, same as the main calendar in the Google
+Meet setup below (`googlecal.write_calendar_for`).
 
 ## Google Meet
 
@@ -160,8 +176,10 @@ Setup:
    (your email, or a secondary calendar's ID from its "Integrate calendar"
    settings - either works, since it's your own calendar now)
 6. Optionally, set `GOOGLE_CALENDAR_ID_JAPAN=...` to a calendar shared as
-   readable with that same account - see "Service picker & external-calendar
-   availability checks" above
+   readable with that same account, and/or `GOOGLE_CALENDAR_WRITE_ID=...` /
+   `GOOGLE_CALENDAR_ID_JAPAN_WRITE=...` to calendars shared with **"Make
+   changes to events"** access - see "Service picker & per-service calendars"
+   above
 
 It also means the client can be added as a real calendar **attendee**
 (`create_event` in `googlecal.py`, with `sendUpdates="all"`) - a plain service

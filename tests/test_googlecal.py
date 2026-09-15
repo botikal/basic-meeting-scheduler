@@ -160,6 +160,77 @@ def test_delete_event_notifies_the_attendee(slot, settings):
     assert kwargs["sendUpdates"] == "all"
 
 
+# --- Reading and writing different calendars per service -------------------
+
+
+def test_write_calendar_defaults_to_the_main_read_calendar(settings):
+    settings.GOOGLE_CALENDAR = {"TOKEN_FILE": "unused.json", "CALENDAR_ID": "cal@example.com"}
+    assert googlecal.write_calendar_for("") == "cal@example.com"
+    assert googlecal.write_calendar_for("headhunting") == "cal@example.com"
+    assert googlecal.write_calendar_for("japan") == "cal@example.com"
+
+
+def test_write_calendar_id_overrides_the_main_calendar(settings):
+    settings.GOOGLE_CALENDAR = {
+        "TOKEN_FILE": "unused.json",
+        "CALENDAR_ID": "cal@example.com",
+        "WRITE_CALENDAR_ID": "bookings@example.com",
+    }
+    assert googlecal.write_calendar_for("") == "bookings@example.com"
+    assert googlecal.write_calendar_for("headhunting") == "bookings@example.com"
+    # No Japan-specific write calendar set, so Japan falls back to the same one.
+    assert googlecal.write_calendar_for("japan") == "bookings@example.com"
+
+
+def test_japan_write_calendar_id_only_applies_to_japan(settings):
+    settings.GOOGLE_CALENDAR = {
+        "TOKEN_FILE": "unused.json",
+        "CALENDAR_ID": "cal@example.com",
+        "WRITE_CALENDAR_ID": "bookings@example.com",
+        "JAPAN_WRITE_CALENDAR_ID": "japan-bookings@example.com",
+    }
+    assert googlecal.write_calendar_for("japan") == "japan-bookings@example.com"
+    assert googlecal.write_calendar_for("headhunting") == "bookings@example.com"
+    assert googlecal.write_calendar_for("") == "bookings@example.com"
+
+
+def test_create_event_writes_to_the_service_specific_calendar(slot, settings):
+    settings.GOOGLE_CALENDAR = {
+        "TOKEN_FILE": "unused.json",
+        "CALENDAR_ID": "cal@example.com",
+        "JAPAN_WRITE_CALENDAR_ID": "japan-bookings@example.com",
+    }
+    fake_service = MagicMock()
+    fake_service.events.return_value.insert.return_value.execute.return_value = {"id": "evt1"}
+
+    with patch("scheduling.googlecal._service", return_value=fake_service):
+        googlecal.create_event(_unsaved_booking(slot, service="japan"))
+
+    kwargs = fake_service.events.return_value.insert.call_args.kwargs
+    assert kwargs["calendarId"] == "japan-bookings@example.com"
+
+
+def test_update_and_delete_target_the_calendar_the_event_was_created_on(slot, settings):
+    """Reschedule/cancel must hit the same calendar create_event wrote to -
+    not the main read calendar - or the event id won't be found there."""
+    settings.GOOGLE_CALENDAR = {
+        "TOKEN_FILE": "unused.json",
+        "CALENDAR_ID": "cal@example.com",
+        "JAPAN_WRITE_CALENDAR_ID": "japan-bookings@example.com",
+    }
+    booking = _unsaved_booking(slot, calendar_event_id="evt1", service="japan")
+    fake_service = MagicMock()
+
+    with patch("scheduling.googlecal._service", return_value=fake_service):
+        googlecal.update_event(booking)
+        googlecal.delete_event(booking)
+
+    patch_kwargs = fake_service.events.return_value.patch.call_args.kwargs
+    delete_kwargs = fake_service.events.return_value.delete.call_args.kwargs
+    assert patch_kwargs["calendarId"] == "japan-bookings@example.com"
+    assert delete_kwargs["calendarId"] == "japan-bookings@example.com"
+
+
 # --- The extra Japan-calendar availability check ---------------------------
 
 
