@@ -41,11 +41,13 @@ def _shift(year: int, month: int, delta: int) -> tuple[int, int]:
     return index // 12, index % 12 + 1
 
 
-def build_month(year: int, month: int, rules: Rules, selected: date | None = None) -> MonthView:
+def build_month(
+    year: int, month: int, rules: Rules, selected: date | None = None, *, service: str = ""
+) -> MonthView:
     today = timezone.now().astimezone(rules.display_tz).date()
     grid = _CAL.monthdatescalendar(year, month)
     flat = [d for week in grid for d in week]
-    availability = days_with_availability(flat, rules)
+    availability = days_with_availability(flat, rules, service=service)
 
     weeks = [
         [

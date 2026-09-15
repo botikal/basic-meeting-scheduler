@@ -43,12 +43,20 @@ class Booking(models.Model):
     class Meta:
         ordering = ["start_at"]
         constraints = [
-            # At most one confirmed booking may occupy a given start time.
-            # Cancelled rows are exempt, so a freed slot can be re-booked.
+            # At most one confirmed booking may occupy a given start time -
+            # scoped per exclusivity track (see availability.TRACK_JAPAN),
+            # since Japan bookings and Headhunting/Global bookings go to
+            # different people and don't need to block each other. Cancelled
+            # rows are exempt, so a freed slot can be re-booked.
             models.UniqueConstraint(
                 fields=["start_at"],
-                condition=models.Q(status="confirmed"),
-                name="unique_confirmed_start",
+                condition=models.Q(status="confirmed", service="japan"),
+                name="unique_confirmed_start_japan",
+            ),
+            models.UniqueConstraint(
+                fields=["start_at"],
+                condition=models.Q(status="confirmed") & ~models.Q(service="japan"),
+                name="unique_confirmed_start_main",
             ),
         ]
 

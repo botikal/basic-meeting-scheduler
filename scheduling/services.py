@@ -46,7 +46,7 @@ def create_booking(
         # The availability check and the insert run in one transaction so a
         # concurrent booking can't slip into the same slots between them.
         with transaction.atomic():
-            if not can_book(start_at, rules, slot_count, extra_busy=extra_busy):
+            if not can_book(start_at, rules, slot_count, service=service, extra_busy=extra_busy):
                 raise SlotUnavailable(_unavailable_message(slot_count, rules))
             booking = Booking.objects.create(
                 client_name=client_name.strip(),
@@ -86,7 +86,14 @@ def reschedule_booking(
     extra_busy = extra_busy_for(booking.service, local_date_of(new_start, rules), rules)
     try:
         with transaction.atomic():
-            if not can_book(new_start, rules, target, exclude_id=booking.pk, extra_busy=extra_busy):
+            if not can_book(
+                new_start,
+                rules,
+                target,
+                service=booking.service,
+                exclude_id=booking.pk,
+                extra_busy=extra_busy,
+            ):
                 raise SlotUnavailable(_unavailable_message(target, rules))
             booking.start_at = new_start
             booking.end_at = new_start + target * rules.slot_length

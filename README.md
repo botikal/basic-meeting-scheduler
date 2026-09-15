@@ -113,13 +113,22 @@ many slots a booking holds; `end_at` is derived from it.
 Before reaching the booking calendar, a client picks one of three services on
 the landing page (`Booking.Service`: `headhunting`, `japan`, `global`). The
 choice is carried through the calendar as a `?service=` query param / hidden
-form field and saved on the booking (`Booking.service`) - it's purely
-informational for Headhunting and Wanted Global (they share one calendar),
-while Japan can be pointed at entirely different calendars, both explained
-below.
+form field and saved on the booking (`Booking.service`).
 
-**Reading (availability):** a slot busy on our own bookings is always
-excluded; if Google Calendar is configured, two more checks layer on top:
+**Exclusivity tracks:** Headhunting and Wanted Global share one - booking
+either blocks the same time slot for both. Japan is its own separate track,
+since it's handled by a different person - a Japan booking and a
+Headhunting/Global booking can occupy the *same* time slot, since they don't
+actually compete for anyone's calendar. This is enforced both in the
+availability check (`availability._confirmed_intervals`, scoped by
+`TRACK_JAPAN`) and by a DB constraint (two partial unique indexes on
+`start_at`, one per track, so a race can't double-book *within* a track
+either). Adding a third track would mean adding a third constraint the same
+way.
+
+**Reading (availability):** a slot busy on our own bookings *in the same
+track* is always excluded; if Google Calendar is configured, two more checks
+layer on top:
 
 - **`GOOGLE_CALENDAR_ID`'s own events count as busy, for every booking**
   (not just ones made through this app) - so a client can't book over

@@ -22,6 +22,16 @@ UTC = ZoneInfo("UTC")
 
 Interval = tuple[datetime, datetime]
 
+# Japan bookings go to a different person than Headhunting/Global, so the two
+# don't need to block each other - each is its own exclusivity track. Kept as
+# a plain string (matching Booking.Service.JAPAN's value) rather than a new
+# field, consistent with googlecal.write_calendar_for/extra_calendar_for.
+TRACK_JAPAN = "japan"
+
+
+def _in_japan_track(service: str) -> bool:
+    return service == TRACK_JAPAN
+
 
 def generate_day_slots(day: date, rules: Rules) -> list[datetime]:
     """Slot starts whose *display date* is `day` (aware UTC), business hours
@@ -69,14 +79,23 @@ def local_date_of(moment: datetime, rules: Rules) -> date:
 
 
 def _confirmed_intervals(
-    window_start: datetime, window_end: datetime, *, exclude_id: int | None = None
+    window_start: datetime,
+    window_end: datetime,
+    *,
+    service: str = "",
+    exclude_id: int | None = None,
 ) -> list[Interval]:
-    """(start, end) of every confirmed booking that overlaps the window."""
+    """(start, end) of every confirmed booking *in the same exclusivity
+    track as `service`* that overlaps the window - see TRACK_JAPAN."""
     query = Booking.objects.filter(
         status=Booking.Status.CONFIRMED,
         start_at__lt=window_end,
         end_at__gt=window_start,
     )
+    if _in_japan_track(service):
+        query = query.filter(service=TRACK_JAPAN)
+    else:
+        query = query.exclude(service=TRACK_JAPAN)
     if exclude_id is not None:
         query = query.exclude(pk=exclude_id)
     return list(query.values_list("start_at", "end_at"))
@@ -90,14 +109,17 @@ def available_slots(
     day: date,
     rules: Rules,
     *,
+    service: str = "",
     exclude_id: int | None = None,
     extra_busy: list[Interval] | None = None,
 ) -> list[datetime]:
     """Single (30-minute) slot starts on `day` that are free to book, soonest first.
 
-    `exclude_id` frees the slots held by one booking - used when rescheduling it.
-    `extra_busy` additionally excludes slots overlapping those intervals - used
-    for services that also check an external calendar (see extra_busy_for).
+    `service` scopes which existing bookings count against this one - see
+    TRACK_JAPAN. `exclude_id` frees the slots held by one booking - used when
+    rescheduling it. `extra_busy` additionally excludes slots overlapping
+    those intervals - used for services that also check an external calendar
+    (see extra_busy_for).
     """
     slots = generate_day_slots(day, rules)
     if not slots:
@@ -107,7 +129,9 @@ def available_slots(
     earliest = now + timedelta(hours=rules.min_notice_hours)
     latest = now + timedelta(days=rules.booking_horizon_days)
     step = rules.slot_length
-    intervals = _confirmed_intervals(slots[0], slots[-1] + step, exclude_id=exclude_id)
+    intervals = _confirmed_intervals(
+        slots[0], slots[-1] + step, service=service, exclude_id=exclude_id
+    )
     if extra_busy:
         intervals = [*intervals, *extra_busy]
 
@@ -118,12 +142,14 @@ def consecutive_capacity(
     start: datetime,
     rules: Rules,
     *,
+    service: str = "",
     exclude_id: int | None = None,
     extra_busy: list[Interval] | None = None,
 ) -> int:
     """How many back-to-back slots can be booked from `start` (0..max).
 
-    0 means `start` itself is not a bookable slot.
+    0 means `start` itself is not a bookable slot. `service` scopes which
+    existing bookings count against this one - see TRACK_JAPAN.
     """
     day_starts = set(generate_day_slots(local_date_of(start, rules), rules))
     step = rules.slot_length
@@ -131,7 +157,10 @@ def consecutive_capacity(
     earliest = now + timedelta(hours=rules.min_notice_hours)
     latest = now + timedelta(days=rules.booking_horizon_days)
     intervals = _confirmed_intervals(
-        start, start + rules.max_consecutive_slots * step, exclude_id=exclude_id
+        start,
+        start + rules.max_consecutive_slots * step,
+        service=service,
+        exclude_id=exclude_id,
     )
     if extra_busy:
         intervals = [*intervals, *extra_busy]
@@ -155,12 +184,15 @@ def can_book(
     rules: Rules,
     slot_count: int,
     *,
+    service: str = "",
     exclude_id: int | None = None,
     extra_busy: list[Interval] | None = None,
 ) -> bool:
     return (
         1 <= slot_count <= rules.max_consecutive_slots
-        and consecutive_capacity(start, rules, exclude_id=exclude_id, extra_busy=extra_busy)
+        and consecutive_capacity(
+            start, rules, service=service, exclude_id=exclude_id, extra_busy=extra_busy
+        )
         >= slot_count
     )
 
@@ -197,8 +229,11 @@ def extra_busy_for(service: str, day: date, rules: Rules) -> list[Interval] | No
     return busy if found_any else None
 
 
-def days_with_availability(days: list[date], rules: Rules) -> dict[date, bool]:
-    """For each date, whether it has at least one free slot.
+def days_with_availability(
+    days: list[date], rules: Rules, *, service: str = ""
+) -> dict[date, bool]:
+    """For each date, whether it has at least one free slot in `service`'s
+    exclusivity track (see TRACK_JAPAN).
 
     Answers the whole list with a single bookings query - used to shade the
     month calendar without an N+1.
@@ -210,7 +245,11 @@ def days_with_availability(days: list[date], rules: Rules) -> dict[date, bool]:
 
     per_day = {d: generate_day_slots(d, rules) for d in days}
     all_slots = [s for slots in per_day.values() for s in slots]
-    intervals = _confirmed_intervals(min(all_slots), max(all_slots) + step) if all_slots else []
+    intervals = (
+        _confirmed_intervals(min(all_slots), max(all_slots) + step, service=service)
+        if all_slots
+        else []
+    )
 
     return {
         d: any(earliest <= s <= latest and not _overlaps(s, s + step, intervals) for s in slots)

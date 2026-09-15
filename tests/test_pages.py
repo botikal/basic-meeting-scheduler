@@ -2,7 +2,9 @@
 
 import pytest
 
+from scheduling.availability import available_slots
 from scheduling.models import Booking
+from scheduling.rules import Rules
 
 pytestmark = pytest.mark.django_db
 
@@ -107,6 +109,43 @@ def test_double_booking_via_page_is_blocked(client, slot):
     )
     assert resp.status_code == 200  # re-rendered with an error
     assert Booking.objects.count() == 1
+
+
+def test_japan_and_headhunting_are_separate_exclusivity_tracks(client, slot):
+    """Japan bookings go to a different person than Headhunting/Global, so
+    the same time slot can be booked once per track."""
+    first = client.post("/schedule/book/", _details(start=slot.isoformat(), service="headhunting"))
+    assert first.status_code == 302
+
+    second = client.post(
+        "/schedule/book/",
+        _details(start=slot.isoformat(), service="japan", client_email="second@example.com"),
+    )
+    assert second.status_code == 302
+    assert Booking.objects.filter(start_at=slot, status=Booking.Status.CONFIRMED).count() == 2
+
+
+def test_available_slots_are_scoped_per_exclusivity_track(client, slot):
+    """The same function that feeds both the slot grid and the month
+    calendar's day-shading respects the track split."""
+    client.post("/schedule/book/", _details(start=slot.isoformat(), service="headhunting"))
+
+    rules = Rules.current()
+    day = slot.date()
+    assert slot not in available_slots(day, rules, service="headhunting")
+    assert slot in available_slots(day, rules, service="japan")
+
+
+def test_headhunting_and_global_share_one_exclusivity_track(client, slot):
+    first = client.post("/schedule/book/", _details(start=slot.isoformat(), service="headhunting"))
+    assert first.status_code == 302
+
+    second = client.post(
+        "/schedule/book/",
+        _details(start=slot.isoformat(), service="global", client_email="second@example.com"),
+    )
+    assert second.status_code == 200  # re-rendered with an error
+    assert Booking.objects.filter(start_at=slot).count() == 1
 
 
 def test_missing_details_re_renders_form(client, slot):

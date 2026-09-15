@@ -112,7 +112,9 @@ def _planner_context(
 
     slots = None
     if selected:
-        free = available_slots(selected, rules, exclude_id=exclude_id, extra_busy=extra_busy)
+        free = available_slots(
+            selected, rules, service=effective_service, exclude_id=exclude_id, extra_busy=extra_busy
+        )
         if need > 1:
             free_set = set(free)
             step = rules.slot_length
@@ -130,7 +132,9 @@ def _planner_context(
     slot_count = 1
     can_move = True
     if start:
-        capacity = consecutive_capacity(start, rules, exclude_id=exclude_id, extra_busy=extra_busy)
+        capacity = consecutive_capacity(
+            start, rules, service=effective_service, exclude_id=exclude_id, extra_busy=extra_busy
+        )
         if mode == "book":
             top = max(min(capacity, rules.max_consecutive_slots), 1)
             slot_count = _clamped_int(_param(request, "slot_count"), 1, top)
@@ -151,7 +155,7 @@ def _planner_context(
         "action_url": action_url,
         "nav_url": nav_url,
         "service": service,
-        "month": build_month(year, month, rules, selected),
+        "month": build_month(year, month, rules, selected, service=effective_service),
         "weekday_labels": WEEKDAY_LABELS,
         "selected": selected,
         "slots": slots,
