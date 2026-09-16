@@ -164,7 +164,13 @@ def create_event(booking: Booking) -> tuple[str, str] | None:
             .insert(
                 calendarId=write_calendar_for(booking.service),
                 conferenceDataVersion=1,
-                sendUpdates="all",  # email the invite to the attendee below
+                # Google's own invite shows the connected account's bare
+                # profile name as sender (unbrandable via this API - it's
+                # pulled from the account's live profile, not this request)
+                # until that profile's name is fixed in Workspace admin.
+                # Living with it for now; emails.send_confirmation is the
+                # client-facing one we do control.
+                sendUpdates="all",
                 body={
                     "summary": _event_title(booking),
                     "description": (booking.note or "").strip(),

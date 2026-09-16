@@ -4,10 +4,19 @@ With no EMAIL_HOST configured (the default), Django's console backend prints
 these to the terminal instead of sending them.
 """
 
+from django.conf import settings
 from django.core.mail import send_mail
 
 from .models import Booking
 from .rules import Rules
+
+
+def _from_email_for(booking: Booking) -> str | None:
+    """Japan-service bookings send from EMAIL_FROM_JAPAN; everything else
+    (and Japan when that's unset) falls back to DEFAULT_FROM_EMAIL."""
+    if booking.service == "japan" and settings.EMAIL_FROM_JAPAN:
+        return settings.EMAIL_FROM_JAPAN
+    return None
 
 
 def _when(booking: Booking, rules: Rules) -> str:
@@ -45,7 +54,7 @@ def send_confirmation(booking: Booking, rules: Rules | None = None) -> None:
     send_mail(
         subject=f"Meeting confirmed - {_when(booking, rules)}",
         message=body,
-        from_email=None,  # uses DEFAULT_FROM_EMAIL
+        from_email=_from_email_for(booking),
         recipient_list=[booking.client_email],
     )
 
@@ -61,6 +70,6 @@ def send_cancellation(booking: Booking, rules: Rules | None = None) -> None:
     send_mail(
         subject=f"Meeting cancelled - {_when(booking, rules)}",
         message=body,
-        from_email=None,
+        from_email=_from_email_for(booking),
         recipient_list=[booking.client_email],
     )

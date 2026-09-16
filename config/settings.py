@@ -33,6 +33,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # serves STATIC_ROOT when DEBUG=False
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -93,6 +94,15 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+if not DEBUG:
+    # The manifest this needs only exists after `collectstatic` (the Docker
+    # build does that) - local dev/tests keep Django's plain storage, which
+    # serves straight from STATICFILES_DIRS with no build step.
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -100,6 +110,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # With no EMAIL_HOST set, messages are printed to the console.
 
 DEFAULT_FROM_EMAIL = env("EMAIL_FROM", default="scheduler@example.com")
+# Japan-service bookings send from a different address than everything else
+# (see emails._from_email_for). Blank falls back to DEFAULT_FROM_EMAIL.
+EMAIL_FROM_JAPAN = env("EMAIL_FROM_JAPAN", default="")
 
 if env("EMAIL_HOST", default=""):
     MAILERS = {
