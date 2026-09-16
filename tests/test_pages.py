@@ -93,6 +93,20 @@ def test_full_booking_flow(client, slot):
     assert "Cancel booking" in manage.content.decode()
 
 
+def test_booked_confirmation_shows_between_details_and_calendar(client, slot):
+    """The big blue "booked" banner isn't in the generic top-of-page message
+    list (Django orders message.tags as "<extra_tags> <level>", so building
+    the CSS class from that combined string silently produced a class no
+    selector matched) - it renders once, between the booking details and the
+    reschedule calendar."""
+    resp = client.post("/schedule/book/", _details(start=slot.isoformat()))
+    body = client.get(resp.url).content.decode()
+
+    assert body.count("Your meeting is booked!") == 1
+    assert 'class="msg msg--success booked"' in body
+    assert body.index("</dl>") < body.index("Your meeting is booked!") < body.index("Reschedule")
+
+
 def test_htmx_booking_redirects_via_header(client, slot):
     resp = client.post(
         "/schedule/book/", _details(start=slot.isoformat()), headers={"HX-Request": "true"}

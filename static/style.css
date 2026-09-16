@@ -113,6 +113,10 @@ p { margin: .5rem 0; }
   display: grid;
   gap: var(--component-gap-xs);
 }
+/* The "booked" message is filtered out of this list (rendered elsewhere on
+   the manage page instead) - collapse the list's own margin when that
+   leaves nothing in it, rather than showing a blank gap. */
+.messages:empty { display: none; }
 .msg { padding: .6rem .85rem; border-radius: var(--radius-8); font-size: .9rem; }
 .msg--success { background: var(--ok-bg); color: var(--ok-text); }
 .msg--error { background: var(--err-bg); color: var(--err-text); }
@@ -360,7 +364,7 @@ a.cal-day--staff.is-selected {
   border-bottom: 1px solid var(--border-soft);
 }
 .bk:last-child { border-bottom: 0; }
-.bk--cancelled { opacity: .5; }
+.bk--cancelled { opacity: .7; }
 .bk-time { font-variant-numeric: tabular-nums; font-weight: 600; display: grid; }
 .bk-time .muted { font-weight: 400; font-size: .8rem; }
 .bk-who { display: grid; gap: .15rem; }

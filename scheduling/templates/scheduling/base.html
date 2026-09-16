@@ -25,11 +25,15 @@
 <body>
   <main class="card">
     {% if messages %}
+      {% spaceless %}
       <ul class="messages">
         {% for message in messages %}
-          <li class="msg msg--{{ message.tags }}">{{ message }}</li>
+          {% if message.extra_tags != "booked" %}
+            <li class="msg msg--{{ message.level_tag }}">{{ message }}</li>
+          {% endif %}
         {% endfor %}
       </ul>
+      {% endspaceless %}
     {% endif %}
     {% block content %}{% endblock %}
   </main>

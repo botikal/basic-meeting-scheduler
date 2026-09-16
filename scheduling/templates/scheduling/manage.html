@@ -20,6 +20,12 @@
     {% if booking.note %}<dt>Note</dt><dd>{{ booking.note }}</dd>{% endif %}
   </dl>
 
+  {% for message in messages %}
+    {% if message.extra_tags == "booked" %}
+      <p class="msg msg--{{ message.level_tag }} booked">{{ message }}</p>
+    {% endif %}
+  {% endfor %}
+
   {% if booking.is_confirmed %}
     <section class="block">
       <h2>Reschedule</h2>
