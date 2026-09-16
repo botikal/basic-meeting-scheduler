@@ -26,6 +26,9 @@ meeting-scheduler-*.json
 client_secret*.json
 token.json
 
+# MCP server config - can hold bearer tokens/credentials in plain text
+.mcp.json
+
 # Local database
 *.db
 *.sqlite3
