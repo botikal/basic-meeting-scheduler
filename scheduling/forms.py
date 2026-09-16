@@ -17,3 +17,7 @@ class BookingDetailsForm(forms.Form):
         label="Anything we should know? (optional)",
         widget=forms.Textarea(attrs={"rows": 3}),
     )
+
+
+class FindBookingsForm(forms.Form):
+    email = forms.EmailField(label="Your email")

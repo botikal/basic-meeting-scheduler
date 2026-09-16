@@ -15,6 +15,7 @@ urlpatterns = [
     path("b/<str:token>/", views.manage, name="manage"),
     path("b/<str:token>/reschedule/", views.reschedule, name="reschedule"),
     path("b/<str:token>/cancel/", views.cancel, name="cancel"),
+    path("find/", views.find_bookings, name="find"),
     # Staff area
     path("staff/", views.staff_home, name="staff-home"),
     path("staff/login/", views.StaffLoginView.as_view(), name="staff-login"),

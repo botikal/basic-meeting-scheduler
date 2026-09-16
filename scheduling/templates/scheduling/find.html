@@ -1,0 +1,45 @@
+{% extends "scheduling/base.html" %}
+{% block title %}Find your meeting{% endblock %}
+{% block content %}
+  <p><a class="link" href="{% url 'scheduling:landing' %}">&larr; Back</a></p>
+
+  <header class="head">
+    <h1>Find your meeting</h1>
+    <p class="muted">Enter the email you booked with to see your meetings.</p>
+  </header>
+
+  <form method="post">
+    {% csrf_token %}
+    <label class="field">
+      <span>{{ form.email.label }}</span>
+      {{ form.email }}
+      {% for e in form.email.errors %}<span class="ferror">{{ e }}</span>{% endfor %}
+    </label>
+    <button type="submit" class="btn">Find my meetings</button>
+  </form>
+
+  {% if bookings is not None %}
+    <section class="block">
+      <h2>Results</h2>
+      {% if bookings %}
+        {% for b in bookings %}
+          <article class="bk{% if b.status == 'cancelled' %} bk--cancelled{% endif %}">
+            <div class="bk-time">
+              {{ b.start_at|date:'D j M Y, H:i' }}
+              <span class="muted">{{ b.duration_minutes }} min</span>
+            </div>
+            <div class="bk-who">
+              {% if b.service %}<span class="pill pill--confirmed">{{ b.get_service_display }}</span>{% endif %}
+              <span class="pill pill--{{ b.status }}">{{ b.get_status_display }}</span>
+            </div>
+            <div class="bk-actions">
+              <a class="link" href="{% url 'scheduling:manage' b.manage_token %}">View / manage &rarr;</a>
+            </div>
+          </article>
+        {% endfor %}
+      {% else %}
+        <p class="muted">No meetings found for that email.</p>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}

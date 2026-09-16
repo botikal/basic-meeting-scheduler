@@ -116,6 +116,16 @@ p { margin: .5rem 0; }
 .msg { padding: .6rem .85rem; border-radius: var(--radius-8); font-size: .9rem; }
 .msg--success { background: var(--ok-bg); color: var(--ok-text); }
 .msg--error { background: var(--err-bg); color: var(--err-text); }
+/* Just-booked confirmation - called out bigger and in brand blue, distinct
+   from the plain green .msg--success used for reschedule/cancel. */
+.msg--success.booked {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 1rem 1.1rem;
+  text-align: center;
+}
 
 /* ---- Calendar --------------------------------------------------- */
 .planner { display: grid; gap: var(--stack-group-gap); }

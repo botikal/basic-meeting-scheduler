@@ -34,7 +34,11 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="foot">
-    {% block foot %}<a href="{% url 'scheduling:staff-home' %}">Staff</a>{% endblock %}
+    {% block foot %}
+      <a href="{% url 'scheduling:find' %}">Find my meeting</a>
+      &middot;
+      <a href="{% url 'scheduling:staff-home' %}">Staff</a>
+    {% endblock %}
   </footer>
 </body>
 </html>

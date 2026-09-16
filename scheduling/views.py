@@ -14,6 +14,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
@@ -24,7 +25,7 @@ from .calendarview import (
     build_staff_month,
     parse_month,
 )
-from .forms import BookingDetailsForm
+from .forms import BookingDetailsForm, FindBookingsForm
 from .models import Booking
 from .rules import Rules
 from .services import (
@@ -255,6 +256,7 @@ def book(request):
                 service=service,
                 rules=rules,
             )
+            messages.success(request, "Your meeting is booked!", extra_tags="booked")
             return _redirect(request, booking.get_absolute_url())
         except SlotUnavailable as exc:
             error = str(exc)
@@ -326,6 +328,22 @@ def cancel(request, token):
     return _redirect(request, reverse("scheduling:manage", args=[token]))
 
 
+# --- Find my bookings ---------------------------------------------------
+# No accounts: enter an email, see every booking under it directly (no email
+# round-trip - this app has no working outbound mail path yet). Same trust
+# model as the manage_token links - knowing the email is what gets you in.
+
+
+def find_bookings(request):
+    form = FindBookingsForm(request.POST or None)
+    bookings = None
+    if request.method == "POST" and form.is_valid():
+        bookings = Booking.objects.filter(
+            client_email=form.cleaned_data["email"]
+        ).order_by("-start_at")
+    return render(request, "scheduling/find.html", {"form": form, "bookings": bookings})
+
+
 def _redirect(request, url: str):
     """Redirect that also works as an htmx response."""
     if _is_htmx(request):
@@ -346,11 +364,13 @@ staff_required = user_passes_test(
 )
 
 
+@method_decorator(never_cache, name="dispatch")
 class StaffLoginView(LoginView):
     template_name = "scheduling/staff_login.html"
     redirect_authenticated_user = True
 
 
+@never_cache
 @staff_required
 def staff_home(request):
     rules = Rules.current()
