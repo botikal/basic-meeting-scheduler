@@ -1,0 +1,23 @@
+# Defense in depth - the Dockerfile only COPYs specific dirs/files, so none
+# of this should ever reach the build context's image layers regardless, but
+# keep it out of the send-to-daemon context too.
+.git
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env
+.env.*
+*.sqlite3
+db.sqlite3
+*-service-account.json
+service-account*.json
+meeting-scheduler-*.json
+client_secret*.json
+token.json
+staticfiles/
+media/
+.idea/
+.vscode/

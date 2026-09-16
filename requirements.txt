@@ -12,3 +12,7 @@ tzdata==2026.3  # IANA timezone database (needed on Windows)
 google-api-python-client==2.200.0
 google-auth==2.58.0
 google-auth-oauthlib==1.4.1  # only needed to run `manage.py google_oauth_setup`
+
+# Production serving (Docker image) - not used by `manage.py runserver`.
+gunicorn==23.0.0
+whitenoise==6.11.0
