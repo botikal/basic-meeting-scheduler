@@ -339,7 +339,7 @@ def find_bookings(request):
     bookings = None
     if request.method == "POST" and form.is_valid():
         bookings = Booking.objects.filter(
-            client_email=form.cleaned_data["email"]
+            client_email=form.cleaned_data["email"], status=Booking.Status.CONFIRMED
         ).order_by("-start_at")
     return render(request, "scheduling/find.html", {"form": form, "bookings": bookings})
 

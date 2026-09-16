@@ -364,7 +364,7 @@ a.cal-day--staff.is-selected {
   border-bottom: 1px solid var(--border-soft);
 }
 .bk:last-child { border-bottom: 0; }
-.bk--cancelled { opacity: .7; }
+.bk--cancelled { opacity: .5; }
 .bk-time { font-variant-numeric: tabular-nums; font-weight: 600; display: grid; }
 .bk-time .muted { font-weight: 400; font-size: .8rem; }
 .bk-who { display: grid; gap: .15rem; }

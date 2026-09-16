@@ -23,14 +23,13 @@
       <h2>Results</h2>
       {% if bookings %}
         {% for b in bookings %}
-          <article class="bk{% if b.status == 'cancelled' %} bk--cancelled{% endif %}">
+          <article class="bk">
             <div class="bk-time">
               {{ b.start_at|date:'D j M Y, H:i' }}
               <span class="muted">{{ b.duration_minutes }} min</span>
             </div>
             <div class="bk-who">
               {% if b.service %}<span class="pill pill--confirmed">{{ b.get_service_display }}</span>{% endif %}
-              <span class="pill pill--{{ b.status }}">{{ b.get_status_display }}</span>
             </div>
             <div class="bk-actions">
               <a class="link" href="{% url 'scheduling:manage' b.manage_token %}">View / manage &rarr;</a>
