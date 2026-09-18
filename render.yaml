@@ -1,0 +1,78 @@
+# Render Blueprint - https://render.com/docs/blueprint-spec
+# "New +" -> "Blueprint" in the Render dashboard, point it at this repo, and
+# it creates the service below with everything already filled in except the
+# fields marked `sync: false` (those need a value typed into the dashboard -
+# either because they're secret, or because this repo is public and they'd
+# otherwise sit in git history forever).
+services:
+  - type: web
+    name: wantedlab-meeting-scheduler
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        fromService:
+          type: web
+          name: wantedlab-meeting-scheduler
+          property: host
+      # Full https:// URLs, not just the bare host ALLOWED_HOSTS needs - fill
+      # these in after the first deploy once you can see the assigned
+      # https://...onrender.com address (or your custom domain).
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      - key: BASE_URL
+        sync: false
+      - key: HOST_NAME
+        value: "Wantedlab"
+      - key: BUSINESS_TIMEZONE
+        value: "Asia/Seoul"
+      - key: DISPLAY_TIMEZONE
+        value: "UTC"
+      - key: BUSINESS_START_HOUR
+        value: "9"
+      - key: BUSINESS_END_HOUR
+        value: "18"
+      - key: LUNCH_START_HOUR
+        value: "12"
+      - key: LUNCH_END_HOUR
+        value: "13"
+      - key: SLOT_MINUTES
+        value: "30"
+      - key: MAX_CONSECUTIVE_SLOTS
+        value: "1"
+      - key: AVAILABLE_WEEKDAYS
+        value: "0,1,2,3,4"
+      - key: BOOKING_HORIZON_DAYS
+        value: "14"
+      - key: MIN_NOTICE_HOURS
+        value: "2"
+      - key: GOOGLE_TOKEN_FILE
+        value: "/app/run/token.json"
+      # Secrets - never committed, typed into the Render dashboard directly.
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: GOOGLE_TOKEN_JSON
+        sync: false
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      # Reveal internal staff identities (real emails / calendar IDs) - kept
+      # out of this public repo even though they're not credentials on their
+      # own, same reasoning as the ones above.
+      - key: GOOGLE_CALENDAR_ID
+        sync: false
+      - key: GOOGLE_CALENDAR_WRITE_ID
+        sync: false
+      - key: GOOGLE_CALENDAR_ID_JAPAN
+        sync: false
+      - key: GOOGLE_CALENDAR_ID_JAPAN_WRITE
+        sync: false

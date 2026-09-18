@@ -2,8 +2,10 @@
 # Runs as root (see Dockerfile) only to fix ownership of mounted volumes -
 # Backyard's persistent-storage PVC mounts root-owned regardless of what the
 # image set at build time - then drops to appuser for the app itself, which
-# never runs as root.
+# never runs as root. Harmless on platforms with no such volume (e.g. Render):
+# the chown/[ -d /data ] below are then no-ops.
 set -eu
+export PORT="${PORT:-8000}"
 
 if [ -n "${GOOGLE_TOKEN_JSON:-}" ] && [ -n "${GOOGLE_TOKEN_FILE:-}" ]; then
     mkdir -p "$(dirname "$GOOGLE_TOKEN_FILE")"
@@ -17,5 +19,5 @@ exec su appuser -s /bin/sh -c '
     set -eu
     python manage.py migrate --noinput
     python manage.py ensure_admin
-    exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2
+    exec gunicorn config.wsgi:application --bind "0.0.0.0:$PORT" --workers 2
 '

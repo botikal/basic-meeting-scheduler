@@ -16,3 +16,8 @@ google-auth-oauthlib==1.4.1  # only needed to run `manage.py google_oauth_setup`
 # Production serving (Docker image) - not used by `manage.py runserver`.
 gunicorn==23.0.0
 whitenoise==6.11.0
+
+# Postgres driver - only actually connects when DATABASE_URL is a postgres://
+# URL (e.g. on Render, which has no persistent disk for SQLite-on-a-volume).
+# Harmless to install unconditionally; sqlite:// URLs never touch this.
+psycopg[binary]==3.2.10
