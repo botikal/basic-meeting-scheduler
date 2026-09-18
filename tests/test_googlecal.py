@@ -293,6 +293,16 @@ def test_busy_intervals_returns_none_when_the_api_call_fails():
         assert googlecal.busy_intervals("japan@example.com", timezone.now(), timezone.now()) is None
 
 
+def test_busy_intervals_returns_none_when_service_construction_fails():
+    """_service() itself can raise - e.g. GOOGLE_TOKEN_FILE/CALENDAR_ID are
+    set but the token file doesn't actually exist on disk yet (GOOGLE_TOKEN_JSON
+    never got materialized). That used to crash the whole request with a 500
+    instead of the "unknown, don't filter on it" None every other failure
+    mode here returns - this is the calendar-date-click bug fix."""
+    with patch("scheduling.googlecal._service", side_effect=FileNotFoundError("no token.json")):
+        assert googlecal.busy_intervals("japan@example.com", timezone.now(), timezone.now()) is None
+
+
 def test_japan_slot_busy_on_the_external_calendar_is_not_offered(client, slot, settings):
     # CALENDAR_ID left blank so only the Japan-specific calendar is in play.
     settings.GOOGLE_CALENDAR = {

@@ -111,10 +111,10 @@ def busy_intervals(
     """
     if not calendar_id:
         return None
-    service = _service()
-    if not service:
-        return None
     try:
+        service = _service()
+        if not service:
+            return None
         response = (
             service.freebusy()
             .query(
