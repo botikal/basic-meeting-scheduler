@@ -64,6 +64,17 @@ starts, so the UI always reflects the most recent click.
   {% if start %}
     <div class="panel">
       {% if mode == "book" %}
+        {% comment %}
+        hx-disabled-elt on the submit button: without it, a double-click (or
+        one impatient click repeated before the first response lands) fires
+        this POST twice. The two requests race server-side - both can pass
+        the availability check before either commits its insert, so the
+        first genuinely books the slot while the second hits the database's
+        uniqueness constraint and comes back "That time was just taken" -
+        confusing when hx-sync then shows *that* response, making a real,
+        successful booking look like it failed. Disabling the button the
+        instant it's clicked stops the second request from ever being sent.
+        {% endcomment %}
         <form method="post" action="{{ action_url }}"
               hx-post="{{ action_url }}" hx-target="#planner" hx-swap="outerHTML">
           {% csrf_token %}
@@ -95,7 +106,7 @@ starts, so the UI always reflects the most recent click.
               {% for e in field.errors %}<span class="ferror">{{ e }}</span>{% endfor %}
             </label>
           {% endfor %}
-          <button type="submit" class="btn">Confirm booking</button>
+          <button type="submit" class="btn" hx-disabled-elt="this">Confirm booking</button>
         </form>
       {% else %}
         <form method="post" action="{{ action_url }}" hx-post="{{ action_url }}">
@@ -107,7 +118,7 @@ starts, so the UI always reflects the most recent click.
               Move your <strong>{{ reschedule_length }}</strong> meeting to
               <strong>{{ start_label }}</strong>?
             </p>
-            <button type="submit" class="btn">Confirm new time</button>
+            <button type="submit" class="btn" hx-disabled-elt="this">Confirm new time</button>
           {% else %}
             <p class="ferror">
               There isn't a free {{ reschedule_length }} block starting then.

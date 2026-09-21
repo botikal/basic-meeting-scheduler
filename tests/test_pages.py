@@ -71,6 +71,19 @@ def test_picking_a_slot_shows_the_details_form(client, slot):
     assert "Your name" in resp.content.decode()
 
 
+def test_confirm_booking_button_disables_itself_on_click(client, slot):
+    """A double-click (or one impatient repeat click before the first
+    response lands) must not fire the POST twice - the two requests would
+    race server-side, and the loser comes back "That time was just taken"
+    even though the winner - the same user's own first click - genuinely
+    booked it. hx-disabled-elt stops the second request from ever being
+    sent; see the comment above this button in _planner.html."""
+    body = client.get(
+        "/schedule/", {"date": slot.date().isoformat(), "start": slot.isoformat()}
+    ).content.decode()
+    assert 'hx-disabled-elt="this"' in body
+
+
 def test_htmx_request_returns_only_the_planner_partial(client):
     resp = client.get("/schedule/", headers={"HX-Request": "true"})
     body = resp.content.decode()
@@ -176,6 +189,17 @@ def test_reschedule_flow(client, slot, other_slot):
     assert resp.status_code == 302
     booking.refresh_from_db()
     assert booking.start_at == other_slot
+
+
+def test_confirm_new_time_button_disables_itself_on_click(client, slot, other_slot):
+    """Same double-submit race as the booking button - see the test above."""
+    client.post("/schedule/book/", _details(start=slot.isoformat()))
+    booking = Booking.objects.get()
+
+    body = client.get(
+        f"/b/{booking.manage_token}/", {"start": other_slot.isoformat()}
+    ).content.decode()
+    assert 'hx-disabled-elt="this"' in body
 
 
 def test_cancel_flow(client, slot):
