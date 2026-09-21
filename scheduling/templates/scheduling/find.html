@@ -1,4 +1,5 @@
 {% extends "scheduling/base.html" %}
+{% load tz %}
 {% block title %}Find your meeting{% endblock %}
 {% block content %}
   <p><a class="link" href="{% url 'scheduling:landing' %}">&larr; Back</a></p>
@@ -20,25 +21,27 @@
 
   {% if bookings is not None %}
     <section class="block">
-      <h2>Results</h2>
-      {% if bookings %}
-        {% for b in bookings %}
-          <article class="bk">
-            <div class="bk-time">
-              {{ b.start_at|date:'D j M Y, H:i' }}
-              <span class="muted">{{ b.duration_minutes }} min</span>
-            </div>
-            <div class="bk-who">
-              {% if b.service %}<span class="pill pill--confirmed">{{ b.get_service_display }}</span>{% endif %}
-            </div>
-            <div class="bk-actions">
-              <a class="link" href="{% url 'scheduling:manage' b.manage_token %}">View / manage &rarr;</a>
-            </div>
-          </article>
-        {% endfor %}
-      {% else %}
-        <p class="muted">No meetings found for that email.</p>
-      {% endif %}
+      <h2>Results <span class="muted">({{ rules.display_timezone }})</span></h2>
+      {% timezone rules.display_timezone %}
+        {% if bookings %}
+          {% for b in bookings %}
+            <article class="bk">
+              <div class="bk-time">
+                {{ b.start_at|date:'D j M Y, H:i' }}
+                <span class="muted">{{ b.duration_minutes }} min</span>
+              </div>
+              <div class="bk-who">
+                {% if b.service %}<span class="pill pill--confirmed">{{ b.get_service_display }}</span>{% endif %}
+              </div>
+              <div class="bk-actions">
+                <a class="link" href="{% url 'scheduling:manage' b.manage_token %}">View / manage &rarr;</a>
+              </div>
+            </article>
+          {% endfor %}
+        {% else %}
+          <p class="muted">No meetings found for that email.</p>
+        {% endif %}
+      {% endtimezone %}
     </section>
   {% endif %}
 {% endblock %}

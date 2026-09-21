@@ -44,3 +44,19 @@ def test_find_says_nothing_for_an_unknown_email(client):
 def test_find_has_a_back_link(client):
     resp = client.get("/find/")
     assert 'href="/"' in resp.content.decode()
+
+
+def test_find_shows_times_in_the_visitors_own_timezone(client, slot):
+    """Regression: find.html used to render start_at with no timezone
+    conversion at all, so it silently showed raw UTC instead of the
+    visitor's own zone - unlike every other client-facing page, which goes
+    through Rules.current(display_timezone=client_timezone(request))."""
+    _booking(slot)  # slot is 09:00 UTC (see conftest._weekday_at_nine)
+
+    body = client.post("/find/", {"email": "dana@example.com"}).content.decode()
+    assert "09:00" in body  # no cookie -> default display timezone, UTC
+
+    client.cookies["tz"] = "Asia/Seoul"  # UTC+9, no DST to worry about
+    body = client.post("/find/", {"email": "dana@example.com"}).content.decode()
+    assert "18:00" in body
+    assert "09:00" not in body

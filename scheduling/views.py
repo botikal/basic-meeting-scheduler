@@ -335,13 +335,16 @@ def cancel(request, token):
 
 
 def find_bookings(request):
+    rules = Rules.current(display_timezone=client_timezone(request))
     form = FindBookingsForm(request.POST or None)
     bookings = None
     if request.method == "POST" and form.is_valid():
         bookings = Booking.objects.filter(
             client_email=form.cleaned_data["email"], status=Booking.Status.CONFIRMED
         ).order_by("-start_at")
-    return render(request, "scheduling/find.html", {"form": form, "bookings": bookings})
+    return render(
+        request, "scheduling/find.html", {"form": form, "bookings": bookings, "rules": rules}
+    )
 
 
 def _redirect(request, url: str):
