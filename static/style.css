@@ -332,7 +332,11 @@ a.cal-day--staff.is-selected {
 .pill--cancelled { background: var(--err-bg); color: var(--err-text); }
 
 /* htmx: briefly fade the planner while a swap is in flight */
-.planner.htmx-request { opacity: .55; transition: opacity .1s; }
+/* Requests here regularly take real time (network + a free-tier server) -
+   pointer-events:none stops a click landing on stale content mid-swap, on
+   top of the hx-sync on #planner/#staff-cal that already cancels overlapping
+   requests. cursor:wait is the signal that this is "working", not "stuck". */
+.planner.htmx-request { opacity: .55; pointer-events: none; cursor: wait; transition: opacity .1s; }
 
 /* ---- Staff area ------------------------------------------- */
 .foot a { color: var(--muted); text-decoration: none; }

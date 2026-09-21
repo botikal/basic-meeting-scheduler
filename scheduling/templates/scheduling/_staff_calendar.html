@@ -4,7 +4,12 @@ to see them below. Swapped on its own (id="staff-cal") by htmx; every link is a
 real URL so it also works without JavaScript.
 {% endcomment %}
 {% load tz %}
-<div id="staff-cal" class="planner">
+{% comment %}
+hx-sync: see the matching note in _planner.html - without it, clicking ahead
+of a slow response fires overlapping requests and whichever finishes last
+wins the swap regardless of click order.
+{% endcomment %}
+<div id="staff-cal" class="planner" hx-sync="this:replace">
 
   <div class="cal">
     <div class="cal-head">

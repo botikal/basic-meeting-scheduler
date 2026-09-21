@@ -3,7 +3,17 @@ The booking planner: month calendar -> time slots -> details form / confirm.
 Rendered inside a page on first load; swapped on its own (id="planner") by htmx.
 Every link is a real URL so the flow also works with JavaScript disabled.
 {% endcomment %}
-<div id="planner" class="planner">
+{% comment %}
+hx-sync on the root: every cal-nav/cal-day/slot link and form below inherits
+it (htmx attributes cascade to descendants by default). Without it, clicking
+ahead of a slow response (real risk - see the timing notes around this
+template's usage) fires overlapping requests all targeting this same
+element, and whichever happens to finish last wins the swap regardless of
+click order - clicks feel like they don't register, or land on the wrong
+state. "this:replace" cancels the in-flight request the moment a newer one
+starts, so the UI always reflects the most recent click.
+{% endcomment %}
+<div id="planner" class="planner" hx-sync="this:replace">
 
   <div class="cal">
     <div class="cal-head">
