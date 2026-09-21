@@ -124,6 +124,14 @@ if env("EMAIL_HOST", default=""):
                 "username": env("EMAIL_HOST_USER", default=""),
                 "password": env("EMAIL_HOST_PASSWORD", default=""),
                 "use_tls": env.bool("EMAIL_USE_TLS", default=True),
+                # Django's SMTP backend has no timeout unless given one -
+                # socket.connect() then blocks forever on a network that
+                # silently drops the connection (e.g. an outbound port
+                # blocked by the host) instead of refusing it outright, and
+                # nothing in emails.py's try/except can save a worker
+                # process that gunicorn has to SIGKILL after its own
+                # timeout - this bounds it so that never happens.
+                "timeout": env.int("EMAIL_TIMEOUT", default=10),
             },
         },
     }
