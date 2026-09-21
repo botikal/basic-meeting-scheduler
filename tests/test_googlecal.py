@@ -109,6 +109,30 @@ def test_create_event_invites_the_client_and_emails_the_invite(slot, settings):
     assert kwargs["body"]["summary"] == "Meeting with Dana Client"
 
 
+def test_create_event_adds_the_configured_notify_email_as_an_extra_attendee(slot, settings):
+    """Piggybacks on Google's own invite/update/cancellation emails (already
+    working) instead of needing a separate SMTP setup - update_event/
+    delete_event don't need their own copy of this: Google Calendar keeps an
+    event's attendee list across patches and deletes, so setting it once
+    here at creation is enough for all three."""
+    settings.GOOGLE_CALENDAR = {
+        "TOKEN_FILE": "unused.json",
+        "CALENDAR_ID": "cal@example.com",
+        "NOTIFY_EMAIL": "global@wantedlab.com",
+    }
+    fake_service = MagicMock()
+    fake_service.events.return_value.insert.return_value.execute.return_value = {"id": "evt1"}
+
+    with patch("scheduling.googlecal._service", return_value=fake_service):
+        googlecal.create_event(_unsaved_booking(slot))
+
+    _, kwargs = fake_service.events.return_value.insert.call_args
+    assert kwargs["body"]["attendees"] == [
+        {"email": "dana@example.com", "displayName": "Dana Client"},
+        {"email": "global@wantedlab.com"},
+    ]
+
+
 def test_event_title_names_the_service_when_one_was_picked(slot, settings):
     settings.GOOGLE_CALENDAR = {"TOKEN_FILE": "unused.json", "CALENDAR_ID": "cal@example.com"}
     fake_service = MagicMock()

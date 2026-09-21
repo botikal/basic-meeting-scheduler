@@ -183,6 +183,11 @@ GOOGLE_CALENDAR = {
     # Optional: where Japan-services bookings are created, if different from
     # WRITE_CALENDAR_ID/CALENDAR_ID above. Blank falls back to those.
     "JAPAN_WRITE_CALENDAR_ID": env("GOOGLE_CALENDAR_ID_JAPAN_WRITE", default=""),
+    # Optional: an internal address added as an extra attendee on every
+    # booking's calendar event, so it gets Google's own invite/update/
+    # cancellation emails alongside the client - piggybacks on the same
+    # mechanism already working, no separate SMTP setup needed. Blank skips.
+    "NOTIFY_EMAIL": env("GOOGLE_CALENDAR_NOTIFY_EMAIL", default=""),
 }
 
 REST_FRAMEWORK = {

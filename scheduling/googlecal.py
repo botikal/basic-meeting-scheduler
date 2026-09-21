@@ -147,6 +147,14 @@ def _event_title(booking: Booking) -> str:
     return f"Meeting with {booking.client_name}"
 
 
+def _attendees_for(booking: Booking) -> list[dict[str, str]]:
+    attendees = [{"email": booking.client_email, "displayName": booking.client_name}]
+    notify_email = settings.GOOGLE_CALENDAR.get("NOTIFY_EMAIL", "")
+    if notify_email:
+        attendees.append({"email": notify_email})
+    return attendees
+
+
 def create_event(booking: Booking) -> tuple[str, str] | None:
     """Create a calendar event with a Meet link for `booking`, inviting the
     client so Google emails them a real calendar invite.
@@ -176,9 +184,7 @@ def create_event(booking: Booking) -> tuple[str, str] | None:
                     "description": (booking.note or "").strip(),
                     "start": {"dateTime": booking.start_at.isoformat()},
                     "end": {"dateTime": booking.end_at.isoformat()},
-                    "attendees": [
-                        {"email": booking.client_email, "displayName": booking.client_name}
-                    ],
+                    "attendees": _attendees_for(booking),
                     "conferenceData": {
                         "createRequest": {
                             "requestId": uuid.uuid4().hex,
