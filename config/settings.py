@@ -67,6 +67,13 @@ ASGI_APPLICATION = "config.asgi.application"
 DATABASES = {
     "default": env.db("DATABASE_URL", default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
 }
+# Reuse the DB connection across requests instead of the default (0 - close
+# and reconnect every single request). For a remote DB like Neon that's a
+# fresh TCP+TLS handshake, every request, to a server that's likely in a
+# different region than the app - the dominant cost on every DB-touching
+# page. No-op for local SQLite (no network connection to reuse).
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 # --- Auth --------------------------------------------------------------
 
