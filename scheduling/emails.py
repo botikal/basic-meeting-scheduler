@@ -1,14 +1,20 @@
 """Confirmation / cancellation emails.
 
 With no EMAIL_HOST configured (the default), Django's console backend prints
-these to the terminal instead of sending them.
+these to the terminal instead of sending them. Best-effort like googlecal.py:
+a booking/cancellation must still succeed even if the send itself fails (a
+bad SMTP config, a rejected send, provider downtime, ...).
 """
+
+import logging
 
 from django.conf import settings
 from django.core.mail import send_mail
 
 from .models import Booking
 from .rules import Rules
+
+logger = logging.getLogger(__name__)
 
 
 def _from_email_for(booking: Booking) -> str | None:
@@ -51,12 +57,15 @@ def send_confirmation(booking: Booking, rules: Rules | None = None) -> None:
         f"  {_manage_url(booking, rules)}\n\n"
         f"Do not share the link - it is the key to managing this booking.\n"
     )
-    send_mail(
-        subject=f"Meeting confirmed - {_when(booking, rules)}",
-        message=body,
-        from_email=_from_email_for(booking),
-        recipient_list=[booking.client_email],
-    )
+    try:
+        send_mail(
+            subject=f"Meeting confirmed - {_when(booking, rules)}",
+            message=body,
+            from_email=_from_email_for(booking),
+            recipient_list=[booking.client_email],
+        )
+    except Exception:
+        logger.exception("Could not email the confirmation for booking %s", booking.pk)
 
 
 def send_cancellation(booking: Booking, rules: Rules | None = None) -> None:
@@ -67,9 +76,12 @@ def send_cancellation(booking: Booking, rules: Rules | None = None) -> None:
         f"has been cancelled.\n\n"
         f"You can book a new time at {rules.base_url}/\n"
     )
-    send_mail(
-        subject=f"Meeting cancelled - {_when(booking, rules)}",
-        message=body,
-        from_email=_from_email_for(booking),
-        recipient_list=[booking.client_email],
-    )
+    try:
+        send_mail(
+            subject=f"Meeting cancelled - {_when(booking, rules)}",
+            message=body,
+            from_email=_from_email_for(booking),
+            recipient_list=[booking.client_email],
+        )
+    except Exception:
+        logger.exception("Could not email the cancellation for booking %s", booking.pk)
