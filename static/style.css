@@ -342,7 +342,6 @@ a.cal-day--staff.is-selected {
 /* ---- Staff area ------------------------------------------- */
 .foot a { color: var(--muted); text-decoration: none; }
 .foot a:hover { color: var(--text); }
-.foot a.foot-find { font-size: 1rem; font-weight: 600; color: var(--accent); }
 .staff-head {
   display: flex;
   align-items: start;

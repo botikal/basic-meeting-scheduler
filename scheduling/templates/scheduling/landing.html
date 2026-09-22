@@ -13,8 +13,7 @@
         <span class="muted">{{ opt.description }}</span>
       </a>
     {% endfor %}
-    {# Not a Booking.Service - a navigation shortcut, styled and sized the
-       same as the real service cards above so it's just as visible. #}
+    {# Not a Booking.Service - a navigation shortcut, styled like the real service cards so it's just as visible. #}
     <a class="service-card" href="{% url 'scheduling:find' %}">
       <strong>Already booked?</strong>
       <span class="muted">Find your meeting and manage it.</span>

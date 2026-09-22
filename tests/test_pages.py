@@ -37,9 +37,11 @@ def test_landing_page_has_a_find_my_meeting_card(client):
     assert "Already booked?" in body
 
 
-def test_footer_find_link_is_styled_bigger_everywhere(client):
-    for resp in (client.get("/"), client.get("/find/")):
-        assert 'class="foot-find"' in resp.content.decode()
+def test_footer_no_longer_duplicates_the_find_my_meeting_link(client):
+    """Redundant once it's a real card on the landing page - see landing.html."""
+    body = client.get("/find/").content.decode()
+    assert 'href="/find/">Find my meeting<' not in body
+    assert 'href="/staff/"' in body
 
 
 def test_picking_a_service_carries_it_into_the_calendar(client, slot):
