@@ -29,6 +29,11 @@ def test_landing_page_lists_the_three_services(client):
     assert 'href="/schedule/?service=japan"' in body
 
 
+def test_landing_page_has_a_find_my_meeting_button(client):
+    body = client.get("/").content.decode()
+    assert 'class="btn btn--ghost" href="/find/"' in body
+
+
 def test_picking_a_service_carries_it_into_the_calendar(client, slot):
     resp = client.get(
         "/schedule/",

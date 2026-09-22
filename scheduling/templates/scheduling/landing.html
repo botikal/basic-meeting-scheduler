@@ -14,4 +14,9 @@
       </a>
     {% endfor %}
   </div>
+
+  <section class="block landing-find">
+    <p class="muted">Already booked a meeting?</p>
+    <a class="btn btn--ghost" href="{% url 'scheduling:find' %}">Find your meeting &rarr;</a>
+  </section>
 {% endblock %}

@@ -397,3 +397,6 @@ a.cal-day--staff.is-selected {
 .service-card strong { font-size: 1.05rem; }
 .service-card:hover { border-color: var(--accent); }
 .service-card:hover strong { color: var(--accent); }
+
+.landing-find { text-align: center; }
+.landing-find .btn { font-size: 1.05rem; padding: .85rem 1.8rem; }
