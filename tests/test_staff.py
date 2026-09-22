@@ -37,6 +37,14 @@ def test_login_page_renders(client):
     assert "Staff login" in resp.content.decode()
 
 
+def test_back_to_booking_link_always_goes_to_the_landing_page(client):
+    """Used to intercept the click and history.back() to wherever staff
+    actually came from instead - now always goes to / regardless."""
+    body = client.get("/staff/login/").content.decode()
+    assert '<a href="/">&larr; Back to booking</a>' in body
+    assert "history.back" not in body
+
+
 def test_staff_pages_are_never_cached(client, staff_user):
     """A browser must never serve a stale, logged-in staff page from its HTTP
     cache after logout (e.g. hitting Back) - the response has to say so

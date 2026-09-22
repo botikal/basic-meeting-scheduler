@@ -26,7 +26,5 @@
   </p>
 {% endblock %}
 {% block foot %}
-  <a href="{% url 'scheduling:landing' %}" onclick="if (history.length > 1) { history.back(); return false; }">
-    &larr; Back to booking
-  </a>
+  <a href="{% url 'scheduling:landing' %}">&larr; Back to booking</a>
 {% endblock %}
