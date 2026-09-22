@@ -339,16 +339,30 @@ a.cal-day--staff.is-selected {
    requests. cursor:wait is the signal that this is "working", not "stuck". */
 .planner.htmx-request { opacity: .55; pointer-events: none; cursor: wait; transition: opacity .1s; }
 
-/* Hidden until #planner picks up .htmx-request (synchronous with the click,
-   not the response) - immediate confirmation the click registered. */
+/* A real floating popup, not inline text - hidden until #planner picks up
+   .htmx-request (synchronous with the click, not the response), so it's
+   immediate confirmation the click registered regardless of how long the
+   request actually takes. */
 .booking-popup {
   display: none;
-  margin-top: var(--component-gap-md);
-  font-size: 1.1rem;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .4);
+}
+.htmx-request .booking-popup { display: flex; }
+.booking-popup-card {
+  background: var(--surface);
+  padding: 1.5rem 2.2rem;
+  border-radius: var(--radius-12);
+  box-shadow: var(--shadow);
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--accent);
+  text-align: center;
 }
-.htmx-request .booking-popup { display: block; }
 
 /* ---- Staff area ------------------------------------------- */
 .foot a { color: var(--muted); text-decoration: none; }
