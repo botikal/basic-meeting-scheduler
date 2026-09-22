@@ -99,6 +99,18 @@ def test_confirm_booking_button_disables_itself_on_click(client, slot):
     assert 'hx-disabled-elt="this"' in body
 
 
+def test_booking_shows_an_immediate_in_progress_message(client, slot):
+    """Shown the instant the click happens (CSS keyed off htmx's own
+    .htmx-request class, not the response) - closes the "did that even
+    register?" gap that tempts a second click, on top of the disabled
+    button from the test above."""
+    body = client.get(
+        "/schedule/", {"date": slot.date().isoformat(), "start": slot.isoformat()}
+    ).content.decode()
+    assert 'class="booking-popup"' in body
+    assert "Booking your meeting" in body
+
+
 def test_htmx_request_returns_only_the_planner_partial(client):
     resp = client.get("/schedule/", headers={"HX-Request": "true"})
     body = resp.content.decode()
@@ -215,6 +227,18 @@ def test_confirm_new_time_button_disables_itself_on_click(client, slot, other_sl
         f"/b/{booking.manage_token}/", {"start": other_slot.isoformat()}
     ).content.decode()
     assert 'hx-disabled-elt="this"' in body
+
+
+def test_reschedule_shows_an_immediate_in_progress_message(client, slot, other_slot):
+    """Same as the booking case above."""
+    client.post("/schedule/book/", _details(start=slot.isoformat()))
+    booking = Booking.objects.get()
+
+    body = client.get(
+        f"/b/{booking.manage_token}/", {"start": other_slot.isoformat()}
+    ).content.decode()
+    assert 'class="booking-popup"' in body
+    assert "Moving your meeting" in body
 
 
 def test_cancel_flow(client, slot):

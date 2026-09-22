@@ -107,6 +107,13 @@ starts, so the UI always reflects the most recent click.
             </label>
           {% endfor %}
           <button type="submit" class="btn" hx-disabled-elt="this">Confirm booking</button>
+          {% comment %}
+          Shown the instant the click happens (htmx adds .htmx-request to
+          #planner synchronously, before the response arrives) - immediate
+          feedback that the click registered, on top of the disabled button
+          above, so there's no dead moment that tempts a second click.
+          {% endcomment %}
+          <p class="booking-popup" role="status">Booking your meeting&hellip;</p>
         </form>
       {% else %}
         <form method="post" action="{{ action_url }}" hx-post="{{ action_url }}">
@@ -119,6 +126,7 @@ starts, so the UI always reflects the most recent click.
               <strong>{{ start_label }}</strong>?
             </p>
             <button type="submit" class="btn" hx-disabled-elt="this">Confirm new time</button>
+            <p class="booking-popup" role="status">Moving your meeting&hellip;</p>
           {% else %}
             <p class="ferror">
               There isn't a free {{ reschedule_length }} block starting then.

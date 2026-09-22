@@ -339,6 +339,17 @@ a.cal-day--staff.is-selected {
    requests. cursor:wait is the signal that this is "working", not "stuck". */
 .planner.htmx-request { opacity: .55; pointer-events: none; cursor: wait; transition: opacity .1s; }
 
+/* Hidden until #planner picks up .htmx-request (synchronous with the click,
+   not the response) - immediate confirmation the click registered. */
+.booking-popup {
+  display: none;
+  margin-top: var(--component-gap-md);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.htmx-request .booking-popup { display: block; }
+
 /* ---- Staff area ------------------------------------------- */
 .foot a { color: var(--muted); text-decoration: none; }
 .foot a:hover { color: var(--text); }
