@@ -39,7 +39,7 @@
   </main>
   <footer class="foot">
     {% block foot %}
-      <a href="{% url 'scheduling:find' %}">Find my meeting</a>
+      <a class="foot-find" href="{% url 'scheduling:find' %}">Find my meeting</a>
       &middot;
       <a href="{% url 'scheduling:staff-home' %}">Staff</a>
     {% endblock %}

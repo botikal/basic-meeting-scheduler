@@ -13,10 +13,11 @@
         <span class="muted">{{ opt.description }}</span>
       </a>
     {% endfor %}
+    {# Not a Booking.Service - a navigation shortcut, styled and sized the
+       same as the real service cards above so it's just as visible. #}
+    <a class="service-card" href="{% url 'scheduling:find' %}">
+      <strong>Already booked?</strong>
+      <span class="muted">Find your meeting and manage it.</span>
+    </a>
   </div>
-
-  <section class="block landing-find">
-    <p class="muted">Already booked a meeting?</p>
-    <a class="btn btn--ghost" href="{% url 'scheduling:find' %}">Find your meeting &rarr;</a>
-  </section>
 {% endblock %}

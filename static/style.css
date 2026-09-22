@@ -342,6 +342,7 @@ a.cal-day--staff.is-selected {
 /* ---- Staff area ------------------------------------------- */
 .foot a { color: var(--muted); text-decoration: none; }
 .foot a:hover { color: var(--text); }
+.foot a.foot-find { font-size: 1rem; font-weight: 600; color: var(--accent); }
 .staff-head {
   display: flex;
   align-items: start;
@@ -397,6 +398,3 @@ a.cal-day--staff.is-selected {
 .service-card strong { font-size: 1.05rem; }
 .service-card:hover { border-color: var(--accent); }
 .service-card:hover strong { color: var(--accent); }
-
-.landing-find { text-align: center; }
-.landing-find .btn { font-size: 1.05rem; padding: .85rem 1.8rem; }

@@ -29,9 +29,17 @@ def test_landing_page_lists_the_three_services(client):
     assert 'href="/schedule/?service=japan"' in body
 
 
-def test_landing_page_has_a_find_my_meeting_button(client):
+def test_landing_page_has_a_find_my_meeting_card(client):
+    """Sized and styled the same as the three real service cards, not a
+    smaller secondary button - see the comment in landing.html."""
     body = client.get("/").content.decode()
-    assert 'class="btn btn--ghost" href="/find/"' in body
+    assert 'class="service-card" href="/find/"' in body
+    assert "Already booked?" in body
+
+
+def test_footer_find_link_is_styled_bigger_everywhere(client):
+    for resp in (client.get("/"), client.get("/find/")):
+        assert 'class="foot-find"' in resp.content.decode()
 
 
 def test_picking_a_service_carries_it_into_the_calendar(client, slot):
