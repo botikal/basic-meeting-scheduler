@@ -3,10 +3,15 @@
 With no EMAIL_HOST configured (the default), Django's console backend prints
 these to the terminal instead of sending them. Best-effort like googlecal.py:
 a booking/cancellation must still succeed even if the send itself fails (a
-bad SMTP config, a rejected send, provider downtime, ...).
+bad SMTP config, a rejected send, provider downtime, ...) - and, just as
+importantly, even if the send is just *slow*. EMAIL_TIMEOUT bounds a single
+attempt, but even a bounded few-second hang is long enough that a client
+gives up on the booking page before ever seeing it succeeded - so the actual
+send always happens on a background thread instead of blocking the response.
 """
 
 import logging
+import threading
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -40,6 +45,16 @@ def _manage_url(booking: Booking, rules: Rules) -> str:
     return f"{rules.base_url}/b/{booking.manage_token}"
 
 
+def _send_async(*, subject: str, body: str, from_email: str | None, to: str, label: str, booking_pk) -> None:
+    def _run():
+        try:
+            send_mail(subject=subject, message=body, from_email=from_email, recipient_list=[to])
+        except Exception:
+            logger.exception("Could not email the %s for booking %s", label, booking_pk)
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
 def send_confirmation(booking: Booking, rules: Rules | None = None) -> None:
     rules = rules or Rules.current()
     meet_line = (
@@ -57,15 +72,14 @@ def send_confirmation(booking: Booking, rules: Rules | None = None) -> None:
         f"  {_manage_url(booking, rules)}\n\n"
         f"Do not share the link - it is the key to managing this booking.\n"
     )
-    try:
-        send_mail(
-            subject=f"Meeting confirmed - {_when(booking, rules)}",
-            message=body,
-            from_email=_from_email_for(booking),
-            recipient_list=[booking.client_email],
-        )
-    except Exception:
-        logger.exception("Could not email the confirmation for booking %s", booking.pk)
+    _send_async(
+        subject=f"Meeting confirmed - {_when(booking, rules)}",
+        body=body,
+        from_email=_from_email_for(booking),
+        to=booking.client_email,
+        label="confirmation",
+        booking_pk=booking.pk,
+    )
 
 
 def send_cancellation(booking: Booking, rules: Rules | None = None) -> None:
@@ -76,12 +90,11 @@ def send_cancellation(booking: Booking, rules: Rules | None = None) -> None:
         f"has been cancelled.\n\n"
         f"You can book a new time at {rules.base_url}/\n"
     )
-    try:
-        send_mail(
-            subject=f"Meeting cancelled - {_when(booking, rules)}",
-            message=body,
-            from_email=_from_email_for(booking),
-            recipient_list=[booking.client_email],
-        )
-    except Exception:
-        logger.exception("Could not email the cancellation for booking %s", booking.pk)
+    _send_async(
+        subject=f"Meeting cancelled - {_when(booking, rules)}",
+        body=body,
+        from_email=_from_email_for(booking),
+        to=booking.client_email,
+        label="cancellation",
+        booking_pk=booking.pk,
+    )
