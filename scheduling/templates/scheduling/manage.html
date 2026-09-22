@@ -38,7 +38,10 @@
             hx-post="{% url 'scheduling:cancel' booking.manage_token %}"
             hx-confirm="Cancel this meeting? This cannot be undone.">
         {% csrf_token %}
-        <button type="submit" class="btn btn--danger">Cancel booking</button>
+        <button type="submit" class="btn btn--danger" hx-disabled-elt="this">Cancel booking</button>
+        <div class="booking-popup" role="status">
+          <div class="booking-popup-card">Cancelling your meeting&hellip;</div>
+        </div>
       </form>
     </section>
   {% else %}

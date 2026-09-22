@@ -251,6 +251,16 @@ def test_cancel_flow(client, slot):
     assert booking.status == Booking.Status.CANCELLED
 
 
+def test_cancel_button_disables_and_shows_an_immediate_popup(client, slot):
+    client.post("/schedule/book/", _details(start=slot.isoformat()))
+    booking = Booking.objects.get()
+
+    body = client.get(f"/b/{booking.manage_token}/").content.decode()
+    assert 'hx-disabled-elt="this"' in body
+    assert 'class="booking-popup"' in body
+    assert "Cancelling your meeting" in body
+
+
 def test_only_30_minute_meetings_by_default(client, slot):
     """MAX_CONSECUTIVE_SLOTS defaults to 1 - no length choice, no hour booking."""
     resp = client.get("/schedule/", {"date": slot.date().isoformat(), "start": slot.isoformat()})
